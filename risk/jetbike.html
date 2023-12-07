@@ -1,0 +1,196 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      overflow: hidden;
+      color: #ffffff;
+      /* background-image: url('grassbg.jpg'); */
+      background-size: 300px;
+      background-color: #999966;
+      /* background-color: #6e5200; */
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .thing {
+      transition: 0.20;
+    }
+  </style>
+  <script>
+    const FRAMESPEED = 25; //How fast the frames redraw
+    const DIRECTVARI = 3; //How wide the variance in direction changes are
+    const CLEARTIME = 5000; //How long a dead thing stays on the screen
+    var snowflakes = [];
+    var jetbikes = [];
+    var attackbikes = [];
+
+    var tickles = 0;
+    var tickleLock = false;
+
+    function tickle() {
+      tickles += 15;
+      if (tickles > 100 && !tickleLock) {
+        document.body.style.backgroundImage = "url('grassbg.jpg')";
+        document.getElementsByTagName('h1')[0].innerHTML += "<br>Now With GTI 3080Ti Raytracing Enabled"
+        tickleLock = true;
+      }
+    }
+
+    function dirCalc() {
+      return Math.round(Math.random() * 3) - (DIRECTVARI / 2);
+    }
+
+    function newattackbike() {
+      // Create img
+      let bike = document.createElement('img');
+      bike.classList.add('thing');
+      bike.src = "jetbike.png";
+      // bike.style.width = '64px';
+      // Set position to absolute
+      bike.style.position = 'absolute';
+      // random left between 0 and screen width
+      bike.style.top = Math.round(Math.random() * window.innerHeight);
+      // Set top to 0
+      bike.style.left = window.innerWidth + 32;
+      bike.style.transform = 'scaleX(-1)';
+      bike.style.filter = 'hue-rotate(180deg)';
+      // pick a direction (-3 to 3)
+      bike.setAttribute('data-drift', dirCalc() / 2);
+      bike.setAttribute('data-facing', 'left');
+      bike.setAttribute('data-speed', 3)
+      document.body.appendChild(bike);
+      attackbikes.push(bike);
+    }
+
+    // function newspacemarine() {
+    //   // Create img
+    //   let marine = document.createElement('img');
+    //   marine.src = "spacemarine.png";
+    //   // marine.style.width = '64px';
+    //   // Set position to absolute
+    //   marine.style.position = 'absolute';
+    //   // random left between 0 and screen width
+    //   marine.style.top = Math.round(Math.random() * window.innerHeight);
+    //   // Set top to 0
+    //   marine.style.left = window.innerWidth + 32;
+    //   // Copy left image
+    //   // marine.style.transform = 'scaleX(-1)';
+    //   // marine.style.filter = 'hue-rotate(180deg)';
+    //   // pick a direction (-3 to 3)
+    //   marine.setAttribute('data-drift', dirCalc() / 2);
+    //   marine.setAttribute('data-facing', 'left');
+    //   marine.setAttribute('data-speed', 3)
+    //   document.body.appendChild(marine);
+    //   spacemarines.push(marine);
+    // }
+
+    function newjetbike() {
+      // Create img
+      let bike = document.createElement('img');
+      bike.classList.add('thing');
+      bike.src = "jetbike.png";
+      // bike.style.width = '64px';
+      // Set position to absolute
+      bike.style.position = 'absolute';
+      // random left between 0 and screen width
+      bike.style.top = Math.round(Math.random() * window.innerHeight);
+      // Set top to 0
+      bike.style.left = '-16';
+      // pick a direction (-3 to 3)
+      bike.setAttribute('data-drift', dirCalc() / 2);
+      bike.setAttribute('data-facing', 'right');
+      bike.setAttribute('data-speed', 3)
+      document.body.appendChild(bike);
+      jetbikes.push(bike);
+    }
+
+    function newflake() {
+      // Create img
+      let flakeElement = document.createElement('img');
+      flakeElement.classList.add('thing');
+      flakeElement.src = "leaf.png";
+      flakeElement.style.width = '8px';
+      flakeElement.classList.add('leaf');
+      // Set position to absolute
+      flakeElement.style.position = 'absolute';
+      // random left between 0 and screen width
+      flakeElement.style.left = Math.round(Math.random() * window.innerWidth);
+      // Set top to 0
+      flakeElement.style.top = '-5';
+      // pick a direction (-3 to 3)
+      flakeElement.setAttribute('data-drift', dirCalc());
+      flakeElement.setAttribute('data-facing', 'down');
+      flakeElement.setAttribute('data-speed', 2)
+      document.body.appendChild(flakeElement);
+      snowflakes.push(flakeElement);
+    }
+
+    function moveList(list) {
+      for (unit of list) {
+        let landed = unit.getAttribute('data-landed');
+        let facing = unit.getAttribute('data-facing')
+        let leftPX = Number(unit.style.left.replaceAll('px', ''))
+        let topPX = Number(unit.style.top.replaceAll('px', ''))
+
+        // Crazy Dave Mode
+        // let hue = Math.round(Math.random()*360)
+        // unit.style.filter = `hue-rotate(${hue}deg)`;
+
+        if (landed) {
+          if (Number(landed) > CLEARTIME) {
+            list.splice(list.indexOf(unit), 1);
+            unit.remove()
+          } else {
+            unit.setAttribute('data-landed', Number(landed) + 1);
+          }
+        } else if ((leftPX > window.innerWidth && facing == 'right') || (leftPX < 0 - unit.width && facing == 'left') || (topPX > window.innerHeight && facing == 'down') || (topPX < 0 && facing == 'up')) {
+          list.splice(list.indexOf(unit), 1);
+          unit.remove()
+        } else {
+          if (unit.classList.contains('leaf') && Math.floor(Math.random() * 1000) == 0) {
+            unit.setAttribute('data-landed', 1);
+            if (Math.floor(Math.random()* 2)) unit.src = "leaf1.png";
+            else unit.src = "leaf2.png";
+          } else {
+            let faceValue = 1;
+            let corner = ['left', 'top'];
+            if (facing == 'left') faceValue = Math.floor(Math.random() * (Number(unit.getAttribute('data-speed')) * -1));
+            else faceValue = Math.ceil(Math.random() * (Number(unit.getAttribute('data-speed'))));
+            if (facing == 'down') corner = ['top', 'left'];
+            unit.style[corner[0]] = Number(unit.style[corner[0]].replaceAll('px', '')) + faceValue;
+            // Add direction to left
+            unit.style[corner[1]] = Number(unit.style[corner[1]].replaceAll('px', '')) + Number(unit.getAttribute('data-drift'));
+            if (Math.floor(Math.random() * 50) == 0) {
+              unit.setAttribute('data-drift', dirCalc() / 2);
+            }
+          }
+        }
+      }
+    }
+
+    setInterval(() => {
+      // moveFlake();
+      moveList(snowflakes);
+      moveList(jetbikes);
+      moveList(attackbikes);
+      if (Math.floor(Math.random() * 10) == 0) newflake();
+      if (Math.floor(Math.random() * 100) == 0) newjetbike();
+      if (Math.floor(Math.random() * 100) == 0) newattackbike();
+      if (!tickleLock) tickles--;
+      if (tickles <= 0) tickles = 0;
+    }, FRAMESPEED);
+  </script>
+</head>
+
+<body onclick="tickle()">
+  <h1>ジェットバイクに乗る宇宙エルフ</h1>
+</body>
+
+</html>
