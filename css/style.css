@@ -13,10 +13,21 @@
     overflow: hidden;
 }
 canvas {
+    z-index: 0;
     border: 1px solid black;
 }
 
 body {
     text-align: center;
     background-color: black;
+}
+
+#debugger {
+    z-index: 1;
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 400px;
+    /* height: 300px; */
+    background-color: grey;
 }

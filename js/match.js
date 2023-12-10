@@ -8,15 +8,19 @@ class Match {
         this.lapStart = 0;
         this.lapEnd = 0;
         this.blocks = []; // Different from map blocks. Think powerups and dropped items
+        this.runFuncs = []; // A list of functions to run every step
     }
 
     step() {
         for (const e of this.npcs) {
             if (e.cleanup && !e.active) {
                 //Remove npcs
-                // console.log('removed');
                 this.npcs = this.npcs.filter(function (el) { return el != e; });
             }
+        }
+        // Run all runFuncs
+        for (const func in this.runFucts) {
+            func();
         }
     }
 }

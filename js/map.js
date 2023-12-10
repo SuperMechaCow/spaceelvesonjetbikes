@@ -13,6 +13,8 @@ class Map {
         this.imgSizeW = 480;
         this.imgSizeH = 480;
         this.blocks = [];
+        // this.blocks.lastBlock = () => { return this.blocks[this.blocks.length - 1]; }
+        this.missiles = [];
         this.percipitation = false;
         this.debris = [];
         this.debrisAmount = 1000;
@@ -25,6 +27,7 @@ class Map {
         this.xwind = 2;
         this.ywind = 0;
         this.lightValue = [0, 0, 0, 0.0];
+        this.runFuncs = []; // A list of functions to run during the step
         // this.lightValue = [0, 0, 128, 0.25];
         if (typeof options == 'object')
             for (const setting of Object.keys(options)) {
@@ -67,9 +70,9 @@ class Map {
                 let tileY = compareY + (col * this.imgSizeH)
                 let totalX = tileX + game.player.camera.x - this.imgSizeW;
                 let totalY = tileY + game.player.camera.y - this.imgSizeH;
-                if (totalX <= this.w && totalY <= this.h && totalX >= 0 && totalY >= 0) 
+                if (totalX <= this.w && totalY <= this.h && totalX >= 0 && totalY >= 0)
                     ctx.drawImage(this.bgimg, Math.floor(tileX), Math.floor(tileY), this.imgSizeW, this.imgSizeH);
-            } 
+            }
         }
     }
 
@@ -77,18 +80,28 @@ class Map {
         for (const e of this.debris) {
             if (e.cleanup && !e.active) {
                 //Remove debris
-                // console.log('removed');
                 this.debris = this.debris.filter(function (el) { return el != e; });
             }
             if (this.percipitation && this.debris.length < this.debrisAmount) {
                 this.debris.push(this.debrisSpawn())
             }
         }
+        for (const e of this.missiles) {
+            if (e.cleanup && !e.active) {
+                //Remove missile
+                this.missiles = this.missiles.filter(function (el) { return el != e; });
+            }
+        }
+        
         this.wind();
+
+        // Run all runFuncs
+        for (const func of this.runFuncs) {
+            func();
+        }
     }
 
     wind() {
-
         for (const e of [game.player.character, ...game.match.npcs, ...this.blocks, ...this.debris]) {
             if (e.wind && e.z + e.hover >= (this.windH * ((e.landable) ? 1 : 0))) {
                 e.x += this.xwind * (1 - e.weight);

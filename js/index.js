@@ -40,21 +40,7 @@ window.onload = function () {
     game.player.character = new Character(allID++, (game.match.map.w / 2), (game.match.map.h / 2));
     game.player.camera = new Camera({ target: game.player.character });
 
-
-    makeGame(['pool', 'waves', 'track', 'ramps', '2v2', 'randommap'])
-    //makeGame(['pool', 'dummy'])
-
-
-
-    //NPC
-    // game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) + 1000, (game.match.map.h / 2) + 500, {target: game.player.character, nameTag: 'Kevin', gfx: 'img/sprites/dark2'})) //Kevin
-
-    // game.player.camera.target = game.match.npcs[game.match.npcs.length-1] //Kevin-vision
-    // game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) + 500, {target: game.match.npcs[game.match.npcs.length-1], nameTag: 'Fren', team: 0})) //Anti-Kevin
-
-    // game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) + 500, { target: game.player.character, nameTag: 'Fren', team: 0 })) //Anti-Kevin
-
-    // game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) + 1000, (game.match.map.h / 2) + 1000, { target: game.player.character, nameTag: 'Fren', team: 0, gfx: 'img/sprites/dark1' })) //racer
+    makeGame(['lonewarrior', 'randommap']);
 
     //start game loop
     //Run the step() function every 16ms (60fps)
@@ -117,6 +103,9 @@ function step() {
         for (const block of game.match.map.blocks) {
             block.collide([game.player.character, ...game.match.npcs, ...game.match.map.blocks])
         }
+        for (const missile of game.match.map.missiles) {
+            missile.collide([game.player.character, ...game.match.npcs, ...game.match.map.blocks])
+        }
         for (const debris of game.match.map.debris) {
             debris.collide([game.player.character, ...game.match.npcs, ...game.match.map.debris])
         }
@@ -134,13 +123,16 @@ function step() {
         for (const block of game.match.map.blocks) {
             block.step();
         }
-        for (const debris of game.match.map.debris) {
-            if (debris.active) {
-                debris.step();
-            } else {
-                //Remove it from this list
-            }
+        for (const missile of game.match.map.missiles) {
+            missile.step();
         }
+        for (const debris of game.match.map.debris) {
+            if (debris.active)
+                debris.step();
+        }
+    } else {
+        game.player.controller.read();
+
     }
 
     // Move camera to next sensible target when player character is inactive or missing
@@ -189,35 +181,22 @@ function draw() {
     //Draw Map
     game.match.map.draw(game.player.character);
 
-    //Draw blocks
-    for (const block of game.match.map.blocks) {
-        block.draw(game.player.character);
+    let renderList =
+        [game.player.character, ...game.match.map.blocks, ...game.match.map.missiles, ...game.match.goals, ...game.match.map.debris, ...game.match.npcs]
+            .sort((a, b) => {
+                if (a.y + a.z < b.y + b.z) return -1;
+                if (a.y + a.z > b.y + b.z) return 1;
+                return 0;
+            });
+    for (const entity of renderList) {
+        entity.draw(game.player.character);
     }
-    
-    //Draw goals
-    for (const goal of game.match.goals) {
-        goal.draw(game.player.character);
-    }
-
-    //Draw debris
-    for (const debris of game.match.map.debris) {
-        debris.draw(game.player.character);
-    }
-
-
-    //Draw npcs
-    for (const npc of game.match.npcs) {
-        npc.draw(game.player.character);
-    }
-
-    //Draw player
-    game.player.character.draw();
 
     //Draw Map Lighting
     game.match.map.lighting();
 
     //Draw HUD
-    game.player.drawHUD();
+    game.player.interface.drawHUD();
 
     //Draw Controller HUD
     game.player.controller.draw();
@@ -289,15 +268,38 @@ function setupInputs() {
         event.stopImmediatePropagation();
         getTouch(event);
     }, { passive: false });
+    window.addEventListener("mousedown", (event) => {
+        let coords = getCanvasRelative(event, false); // from top-left
+        game.player.controller.fireX = coords.x;
+        game.player.controller.fireY = coords.y;
+        coords = getCanvasRelative(event, true); // relative to center
+        game.player.controller.rclickX = coords.x;
+        game.player.controller.rclickY = coords.y;
+        // Get which mousebutton they clicked
+        if (event.button == 0)
+            game.player.controller.clickButton = 1
+        else if (event.button == 2)
+            game.player.controller.rclickButton = 1
+    });
+    window.addEventListener("mouseup", (event) => {
+        if (event.button == 0)
+            game.player.controller.clickButton = 0;
+        else if (event.button == 2)
+            game.player.controller.rclickButton = 0;
+    });
+    window.addEventListener("wheel", (event) => {
+        game.player.controller.wheelUp = (event.wheelDelta > 0) * 1;
+        game.player.controller.wheelDown = (event.wheelDelta < 0) * 1;
+    });
     window.addEventListener('mousemove', (event) => {
         let coords = getCanvasRelative(event, true);
         game.player.controller.aimX = coords.x
         game.player.controller.aimY = coords.y
-    })
+    });
+    window.addEventListener("contextmenu", e => e.preventDefault());
 }
 
 function getCanvasRelative(e, center) {
-    // console.log(window.orientation);
     bx = canvas.getBoundingClientRect();
     if (center) {
         let compareX = e.clientX - this.x;
@@ -390,7 +392,7 @@ function makeGame(type) {
             let tempy = (Math.floor(Math.random() * (game.match.map.h / 48)) * 48) + 24
             let tempw = (Math.ceil(Math.random() * 2) * 48)
             let temph = (Math.ceil(Math.random() * 2) * 48)
-            game.match.map.blocks.push(new Block(allID++, tempx, tempy, { color: '#333333', w: tempw, h: temph }))
+            game.match.map.blocks.push(new Block(allID++, tempx, tempy, { color: '#333333', colorSide: '#666666', w: tempw, h: temph, d: 64 }))
         }
         for (let i = 0; i < 25; i++) {
             let tempx = (Math.floor(Math.random() * (game.match.map.w / 48)) * 48) + 24
@@ -401,6 +403,16 @@ function makeGame(type) {
             let tempx = (Math.floor(Math.random() * (game.match.map.w / 48)) * 48) + 24
             let tempy = (Math.floor(Math.random() * (game.match.map.h / 48)) * 48) + 24
             game.match.map.blocks.push(new SpeedPad(allID++, tempx, tempy, { color: '#9999FF' }))
+        }
+        for (let i = 0; i < 25; i++) {
+            let tempx = (Math.floor(Math.random() * (game.match.map.w / 48)) * 48) + 24
+            let tempy = (Math.floor(Math.random() * (game.match.map.h / 48)) * 48) + 24
+            game.match.map.blocks.push(new AmmoPickup(allID++, tempx, tempy))
+        }
+        for (let i = 0; i < 25; i++) {
+            let tempx = (Math.floor(Math.random() * (game.match.map.w / 48)) * 48) + 24
+            let tempy = (Math.floor(Math.random() * (game.match.map.h / 48)) * 48) + 24
+            game.match.map.blocks.push(new AmmoPickup(allID++, tempx, tempy, { ammoType: 'flamer', ammoAmount: 25, color: "#FFFF00" }))
         }
         for (let i = 0; i < 10; i++) {
             let tempx = (Math.floor(Math.random() * (game.match.map.w / 48)) * 48) + 24
@@ -479,6 +491,15 @@ function makeGame(type) {
             game.match.npcs.push(new NPC(allID++, tempx, tempy, { target: null, nameTag: 'Frendo ' + (i + 1), team: 0 })) //Anti-Kevin
         }
     }
+    if (type.includes('lonewarrior')) {
+        game.match.map.runFuncs.push(() => {
+            if (ticks % 1600 == 0) {
+                let tempx = Math.floor(Math.random() * game.match.map.w);
+                let tempy = Math.floor(Math.random() * game.match.map.h);
+                game.match.npcs.push(new NPC(allID++, tempx, tempy, { item: Math.round(Math.random()), target: game.player.character, nameTag: 'Kevin' + allID, gfx: 'img/sprites/dark2' })) //Kevin
+            }
+        })
+    }
     if (type.includes('ramps')) {
         game.match.map.blocks.push(new Wave(allID++, 7200 / 4, (game.match.map.h / 2), { color: '#aaaaFF', w: 100, h: 400 }))
         game.match.map.blocks.push(new Wave(allID++, 7200 / 2, (game.match.map.h / 2), { color: '#aaaaFF', w: 100, h: 400 }))
@@ -490,7 +511,7 @@ function makeGame(type) {
     if (type.includes('2v2')) {
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) + 1000, (game.match.map.h / 2) - 1000, { target: game.player.character, nameTag: 'Jaysin', gfx: 'img/sprites/dark2' })) //Kevin
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) + 1000, (game.match.map.h / 2) + 1000, { target: game.match.npcs[game.match.npcs.length - 2], nameTag: 'Jason', gfx: 'img/sprites/dark2' })) //Kevin
-        game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) - 1000, { target: game.player.character, nameTag: 'Logan', team: 0 })) //Anti-Kevin
+        game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) - 1000, { color: '#006600', target: game.player.character, nameTag: 'Logan', team: 0 })) //Anti-Kevin
     }
     if (type.includes('4v4')) {
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) + 1000, (game.match.map.h / 2) - 1000, { target: game.player.character, nameTag: 'Jaysin', gfx: 'img/sprites/dark2' })) //Kevin
@@ -500,5 +521,78 @@ function makeGame(type) {
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) - 1500, { target: game.player.character, nameTag: 'Logan', team: 0 })) //Anti-Kevin
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2), { target: game.player.character, nameTag: 'Logan', team: 0 })) //Anti-Kevin
         game.match.npcs.push(new NPC(allID++, (game.match.map.w / 2) - 1000, (game.match.map.h / 2) + 1500, { target: game.player.character, nameTag: 'Logan', team: 0 })) //Anti-Kevin
+    }
+}
+
+
+// Takes two regions from object.getRegion()
+function collideRect(entity, collider) {
+    let left = (entity.x + entity.w > x && entity.x < x.collider) * -1; // Left (x - 1)
+    let rear = (entity.y + entity.h > collider.y && entity.y < collider.y) * -1; // Rear (y - 1)
+    let under = (entity.z + entity.d > collider.z && entity.z < collider.z) * -1; // Under (z - 1)
+    let right = (entity.x < entity.x + collider.w && entity.x > collider.x) * 1; // Right (x + 1)
+    let front = (entity.y < entity.y + collider.h && entity.y > collider.y) * 1; // Front (y + 1)
+    let top = (entity.z < entity.z + collider.d && entity.z > collider.z) * 1; // Top (z + 1)
+    let withinX = (entity.x + entity.w > collider.x && entity.x + entity.w < collider.x + collider.w) * 1; // wholly within X (x ??)
+    let withinY = (entity.y + entity.h > collider.y && entity.y + entity.h < collider.y + collider.h) * 1; // wholly within Y (y ??)
+    let withinZ = (entity.z + entity.d > collider.z && entity.z + entity.d < collider.z + collider.d) * 1; // whilly within Z (z ??)
+    let contains = (withinX * withinY * withinZ); // wholly within collider
+    let contained = (left + right == 0) ? 1 : 0; // Collider is wholly within
+    return {
+        left: left,
+        rear: rear,
+        under: under,
+        right: right,
+        front: front,
+        top: top,
+        withinX: withinX,
+        withinY: withinY,
+        withinZ: withinZ,
+        contains: contains,
+        contained: contained
+    }
+}
+
+class Vect3 {
+    constructor(x, y, z) {
+        this.x = x || 0;
+        this.y = y || 0;
+        this.z = z || 0;
+    }
+    compare(target) {
+        let xd = target.x - this.x;
+        let yd = target.y - this.y;
+        let zd = target.z - this.z;
+        let dist2 = Math.sqrt(xd ** 2 + yd ** 2);
+        let dist3 = Math.sqrt(xd ** 2 + yd ** 2 + zd ** 2);
+        return {
+            angle2: new Vect3(xd / dist2, yd / dist2, 0),
+            angle3: new Vect3(xd / dist3, yd / dist3, zd / dist3),
+            difference: new Vect3(xd, yd, zd),
+            distance2: dist2,
+            distance3: dist3
+        }
+    }
+}
+
+class Cube {
+    constructor(origin, width) {
+        this.pos = origin;
+        this.width = width;
+        this.end = new Vect3(origin.x + width.x, origin.y + width.y, origin.z + width.z);
+    }
+    half() {
+        return new Vect3(this.width.x / 2, this.width.y / 2, this.width.z / 2)
+    }
+    center() {
+        return new Vect3(this.pos.x + (this.width.x / 2), this.pos.x + (this.width.y / 2), this.pos.x + (this.width.z / 2))
+    }
+}
+
+class Cylinder {
+    constructor(origin, radius, height) {
+        this.pos = origin;
+        this.radius = radius;
+        this.height = height;
     }
 }

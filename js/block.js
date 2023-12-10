@@ -17,17 +17,28 @@ class Block {
     constructor(id, x, y, options) {
         // Lifespan
         this.id = id;
-        this.active = true;
-        this.cleanup = false;
+        this.active = true; //Are we tracking this in the game?
+        this.dying = false; //Is the lifespan counting down?
+        this.cleanup = true; //Is this ready to be removed from the game?
         this.startDelay = 0; //Reset after {options}
-        this.livetime = -1;
+        this.livetime = -1; //Number of frames to live (-1 forever)
         this.spawnX = x;
         this.spawnY = y;
         this.repeat = 0;
+        // Properties
+        this.target = {};   // What is it chasing?
+        this.parent = {};   // Who does this belong to?
         this.type = 'block';
         this.tags = ['immobile'];
         this.runFunc = function () { return }
+        
         // Position
+        this.pos = new Vect3(x, y, 0);
+        this.width = new Vect3(48, 48, 24);
+        this.offset = new Vect3(0, 0, 0);
+        this.aim = new Vect3(0,0,0);
+        this.angle = new Vect3(0,0,0);
+
         this.x = x;
         this.y = y;
         this.z = 0;
@@ -37,7 +48,9 @@ class Block {
         this.w = 48;
         this.h = 48;
         this.d = 16;
+
         this.hover = 0;
+
         // Speed
         this.xspeed = 0;
         this.yspeed = 0;
@@ -60,6 +73,7 @@ class Block {
         // Graphics
         this.imgFile = '';  // Leave blank to add collision to a background
         this.color = '';    // Leave blank to add collision to a background
+        this.colorSide = ''; //The color of the wall of the block
         this.img = new Image();
         this.img.src = this.imgFile;
         this.pattern = false;
@@ -81,16 +95,17 @@ class Block {
 
         //Don't run if not active or not after start delay time
         if (this.active && ticks >= this.startDelay) {
-            //If this has a target, move towards it
+            //If this has a target...
             if (this.target) {
-                //Make sure it's active first
+                //Make sure the target is active first
                 if (this.target.active) {
                     if (this.chase) {
                         let compareX = this.target.x - this.x;
                         let compareY = this.target.y - this.y;
                         let speed = this.speedMulti;
-                        //Is this airborne
+                        //Can this block change speed?
                         if (this.speedChange) {
+                            //Is this airborne?
                             if (this.z > game.match.map.windH)
                                 speed *= 0.1;
                             if (compareX > 0 && this.xspeed < this.maxSpeed) {
@@ -101,9 +116,7 @@ class Block {
                                 this.xspeed -= speed;
                                 this.img.src = this.leftgfx + '.png';
                             }
-                        }
-                        //Move towards target
-                        if (this.speedChange) {
+                            //Move towards target
                             if (compareY < 0 && this.yspeed > this.maxSpeed * -1) this.yspeed -= speed;
                             else if (compareY >= 0 && this.yspeed < this.maxSpeed) this.yspeed += speed;
                         }
@@ -127,6 +140,8 @@ class Block {
             if (!this.speedChange) {
                 if (this.xspeed > 0 && Math.abs(this.xspeed) != Math.abs(this.dxspeed)) this.xspeed = this.dxspeed;
                 if (this.xspeed < 0 && Math.abs(this.xspeed) != Math.abs(this.dxspeed)) this.xspeed = this.dxspeed * -1;
+                if (this.yspeed > 0 && Math.abs(this.yspeed) != Math.abs(this.dyspeed)) this.yspeed = this.dyspeed;
+                if (this.yspeed < 0 && Math.abs(this.yspeed) != Math.abs(this.dyspeed)) this.yspeed = this.dyspeed * -1;
             }
 
             // Make the move
@@ -135,11 +150,11 @@ class Block {
             this.z += this.zspeed;
 
             // If this can die and is always dying
-            if (this.alwaysDying && this.livetime > 0) this.livetime--;
+            if (this.dying && this.livetime > 0) this.livetime--;
 
             // Else die as it's calculating falling physics
             if (this.z < this.hover * -1) {
-                if (!this.alwaysDying) this.livetime--;
+                if (!this.dying) this.livetime--;
                 this.z = this.hover * -1;
                 this.xspeed *= 0.85;
                 this.yspeed *= 0.85;
@@ -181,10 +196,10 @@ class Block {
     }
 
     draw(options) {
-        let compareX = game.player.camera.x - this.x;
-        let compareY = game.player.camera.y - this.y;
-        if (Math.abs(compareX) - this.w < game.window.w / 2 && Math.abs(compareY) - this.h - this.z < game.window.h / 2) {
-            if (this.active && ticks >= this.startDelay) {
+        if (this.active && ticks >= this.startDelay) {
+            let compareX = game.player.camera.x - this.x;
+            let compareY = game.player.camera.y - this.y;
+            if (Math.abs(compareX) - this.w < game.window.w / 2 && Math.abs(compareY) - this.h - this.z < game.window.h / 2) {
                 if (this.imgFile) {
                     ctx.drawImage(this.img, game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
                 } else if (this.color) {
@@ -199,7 +214,11 @@ class Block {
                             ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
                         } else {
                             ctx.fillStyle = this.color;
-                            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
+                            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z - this.d, this.w, this.h);
+                            if (this.colorSide) {
+                                ctx.fillStyle = this.colorSide;
+                                ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z - this.d + this.h, this.w, this.d);
+                            }
                         }
                     }
                 }
@@ -209,6 +228,17 @@ class Block {
 
     collide() {
         return
+    }
+
+    getRegion() {
+        return {
+            x: this.x,
+            y: this.y,
+            z: this.z,
+            w: this.w,
+            h: this.h,
+            d: this.d
+        }
     }
 
 }
@@ -375,7 +405,7 @@ class Debris extends Block {
         this.hover = 0;
         this.weight = 0.2;
         this.terminalVel = 1;
-        this.alwaysDying = false;
+        this.dying = false;
         this.livetime = 300;
         this.gravity = true;
         this.landable = true;
@@ -519,15 +549,22 @@ class JumpPad extends Block {
         super(id, x, y, options);
         this.tags = ['immobile', 'nocollide']; //Made it nocollide so you can enter the space
         this.jumpBoost = 3;
+        // Options
+        if (typeof options === 'object')
+            for (var key of Object.keys(options)) {
+                this[key] = options[key];
+            }
     }
 
     collide(colliders, options) {
-        // custom collide code "activates" the powerup
-        for (const c of colliders) {
-            if (c != this) {
-                if (!c.tags.includes('immobile') && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) && this.z < c.d && c.z < this.d) {
-                    // if (Math.abs(c.z) <= 1)
-                    c.zspeed += this.jumpBoost * ((Math.abs(c.xspeed) + Math.abs(c.yspeed)) / 2)
+        if (this.active && ticks >= this.startDelay) {
+            // custom collide code "activates" the powerup
+            for (const c of colliders) {
+                if (c != this) {
+                    if (!c.tags.includes('immobile') && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) && this.z < c.d && c.z < this.d) {
+                        // if (Math.abs(c.z) <= 1)
+                        c.zspeed += this.jumpBoost * ((Math.abs(c.xspeed) + Math.abs(c.yspeed)) / 2)
+                    }
                 }
             }
         }
@@ -547,6 +584,36 @@ class SpeedPad extends Block {
                 if (!c.tags.includes('immobile') && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) && this.z < c.d && c.z < this.d) {
                     c.xspeed *= 1.1
                     c.yspeed *= 1.1
+                }
+            }
+        }
+    }
+}
+
+class AmmoPickup extends Block {
+    constructor(id, x, y, options) {
+        super(id, x, y, options);
+        this.w = this.h = 32;
+        this.color = '#FF00FF';
+        this.ammoType = 'pistol';
+        this.ammoAmount = 25;
+        this.tags = ['immobile', 'nocollide']; //Made it nocollide so you can enter the space
+        // Options
+        if (typeof options === 'object')
+            for (var key of Object.keys(options)) {
+                this[key] = options[key];
+            }
+    }
+
+    collide(colliders, options) {
+        // custom collide code "activates" the powerup
+        for (const c of colliders) {
+            if (this.active) {
+                if (c != c.team != undefined) {
+                    if (!c.tags.includes('immobile') && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) && this.z < c.d && c.z < this.d) {
+                        c.ammo[this.ammoType] += this.ammoAmount;
+                        this.active = false;
+                    }
                 }
             }
         }
@@ -664,9 +731,84 @@ class PolyBlock {
                     let tempz = (Math.random() * 6) - 3;
                     if (this.color) {
                         if (ticks % 4 == 0) {
-                            game.match.map.debris.push(new Debris(allID++, c.x, c.y + (c.h / 2), { wind: false, w: 16, h: 12, z: c.z, color: this.splash, livetime: 12, alwaysDying: true, landable: true }))
+                            game.match.map.debris.push(new Debris(allID++, c.x, c.y + (c.h / 2), { wind: false, w: 16, h: 12, z: c.z, color: this.splash, livetime: 12, dying: true, landable: true }))
                         }
-                        game.match.map.debris.push(new Debris(allID++, c.x, c.y + (c.h / 2), { wind: false, w: 6, h: 6, xspeed: tempx, zspeed: 3 + tempz, z: c.z + c.hover, color: this.splash, livetime: 30, alwaysDying: true, landable: true }))
+                        game.match.map.debris.push(new Debris(allID++, c.x, c.y + (c.h / 2), { wind: false, w: 6, h: 6, xspeed: tempx, zspeed: 3 + tempz, z: c.z + c.hover, color: this.splash, livetime: 30, dying: true, landable: true }))
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+class Missile extends Block {
+    constructor(id, x, y, options) {
+        super(id, x, y, options);
+        this.w = 8;
+        this.h = 8;
+        this.d = 8;
+        this.dying = true;
+        this.livetime = 100,
+            this.type = 'missile';
+        this.color = '#FF0000';
+        this.tags = ['nocollide']; //Made it nocollide so you can enter the space
+        this.touchSFX = new Audio('sfx/hit_01.wav');
+        this.damage = 10;
+        this.runFunc = function () {
+            let tempx = (Math.random() * 1) - 0.5;
+            let tempy = (Math.random() * 1) - 0.5;
+            if (ticks % 2 == 0) game.match.map.debris.push(new Debris(allID++, this.x, this.y,
+                {
+                    w: 4,
+                    h: 4,
+                    xspeed: tempx,
+                    yspeed: tempy,
+                    z: this.z,
+                    color: '#dddd00',
+                    livetime: 15,
+                    dying: true,
+                    landable: false
+                }));
+        }
+        if (typeof options === 'object')
+            for (var key of Object.keys(options)) {
+                this[key] = options[key];
+            }
+
+    }
+
+    collide(colliders, options) {
+        if (this.active && ticks >= this.startDelay) {
+            // custom collide code "activates" the powerup
+            for (const c of colliders) {
+                if (c != this && c.team != this.parent.team && !c.tags.includes('nocollide')) {
+                    //Goals collide infinitely upwards
+                    if (Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2)) {
+                        c.hp -= this.damage;
+                        this.active = false;
+                        this.cleanup = true;
+                        this.touchSFX.play();
+                        for (let parts = 0; parts < 10; parts++) {
+                            let tempx = (Math.random() * 4) - 2;
+                            let tempy = (Math.random() * 4) - 2;
+                            let tempC = Math.ceil(Math.random() * 255);
+                            game.match.map.debris.push(new Debris(allID++, this.x, this.y,
+                                {
+                                    w: 2,
+                                    h: 2,
+                                    xspeed: tempx,
+                                    yspeed: tempy,
+                                    z: this.z,
+                                    color: '#ff' + tempC.toString(16) + '00',
+                                    livetime: 20,
+                                    dying: true,
+                                    landable: false
+                                }));
+                        }
                     }
                 }
             }
