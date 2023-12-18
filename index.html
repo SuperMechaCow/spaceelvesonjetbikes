@@ -1,25 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+    <link rel="apple-touch-icon" sizes="180x180" href="img/icons//apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/icons//favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/icons/favicon-32x32.png">
     <title>The Lone Warrior</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src = "js/index.js"></script>
-    <script src = "js/block.js"></script>
-    <script src = "js/buff.js"></script>
-    <script src = "js/camera.js"></script>
-    <script src = "js/character.js"></script>
-    <script src = "js/controller.js"></script>
-    <script src = "js/game.js"></script>
-    <script src = "js/interface.js"></script>
-    <script src = "js/items.js"></script>
-    <script src = "js/map.js"></script>
-    <script src = "js/match.js"></script>
-    <script src = "js/player.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/block.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/character.js"></script>
+    <script src="js/controller.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/interface.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/match.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/utils.js"></script>
 </head>
+
 <body>
-    <canvas width=900 height=600 id="game-canvas"></canvas>
+    <canvas width=900 height=600 id="game-canvas">Your browser needs to be able to render an HTML5 Canvas</canvas>
+    <div id="debugger">
+        Enable Debug
+        <input type="checkbox" onchange="game.debug = this.checked;">
+        <br>
+        Enable 3D
+        <input type="checkbox" onchange="game.player.camera._3D = this.checked;">
+        <input type="range" value="1" min="0" max="1" step="0.01" oninput="game.player.camera.angle = this.value;">
+
+    </div>
 </body>
+
 </html>

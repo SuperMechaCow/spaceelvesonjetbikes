@@ -1,3 +1,7 @@
+h1 - alligator
+h2 - banner
+h3 - small
+
 <!--
       ::::::::   ::::::::  :::::::::  ::::::::::          ::::::::   ::::::::  ::::    :::  ::::::::  :::::::::: ::::::::: :::::::::::
     :+:    :+: :+:    :+: :+:    :+: :+:                :+:    :+: :+:    :+: :+:+:   :+: :+:    :+: :+:        :+:    :+:    :+:
@@ -23,32 +27,46 @@ Dark elves believe everything is random:
 #########   ########          ###        ########### ###    ###  ########     ###
 -->
 
-- Finalizing control inputs (Bot extends Player, has controller, makes AI. Character only takes input)
-    - Keyboard, Mouse, TOuch, Gampead classes
-    - Fix Touch radius and add buttons
-- HUD elements to interface.js in Interface class, belonging to Players
-- Cubes and Tubes
-    - Cubes made from cubes and Tubes from cylinders
-    - Cubes cannot move and do not collide if they do
-    - Tubes can move and collide with other Tubes and collide with Cubes
-    - Tubes can predictive collide and current collide
-- Physics to new module
-- Complete speed physics (acceleration, top speed, actual speed, friction/weight, bounce)
-- AABB Collision for 3d (and polyblocks as well)?
-- Blocks and polyblocks with a top and side texture, and transparency if behind
-
-- Tilemaps
-- Make a pathing grid on map load that determines if any blocks are in each grid square
-- Tilemap to collision blocks
-- use A* pathing with grid
-
-- Fix X/Y npc movement
+- Debris from missile
+- missile collision with blocks
+- missile collsion particles
 - Only draw in camera
+- Complete speed physics (top speed, actual speed, weight)
+- Shoot along z rotation in iso view
+- Give blocks friction for wall jumping rooftop drag
+- Fix Gamepad
+- Keyboard, Mouse, Touch, Gampead classes
+- Fix Touch radius and add buttons
+- Waves
+- Bot chasing / targets / paths
+- Racing
+- A* pathing
+- Graphics are block attached to character
+-- Are shadows blocks, too?
+- Animators
+- Emitters
+- Melee Weapons
+- Tilemaps
+- Polyblock regions
+- 3D Polyblocks
 - Camera Zoom/Pan/Shake
-- Foot Physics
+- Draw xhair from anywhere
+- Arc Aiming Cone
 
-- block heights
-- hitboxes (graphics can be bigger than collision area)
-    -- hitbox and graphic should just both be blocks attached to the x.y position of the character
-    -- if blocks have parents, and another collider hits the hitbox, send the damage to the hitbox parent
-- animators
+<!--
+      :::::::::  :::    :::  ::::::::   ::::::::
+     :+:    :+: :+:    :+: :+:    :+: :+:    :+:
+    +:+    +:+ +:+    +:+ +:+        +:+
+   +#++:++#+  +#+    +:+ :#:        +#++:++#++
+  +#+    +#+ +#+    +#+ +#+   +#+#        +#+
+ #+#    #+# #+#    #+# #+#    #+# #+#    #+#
+#########   ########   ########   ########
+-->
+
+- bullets always collide on left of block?
+-- fast moving objects penetrate deeper. need raycasting collision
+- z height too high on ortho view when over tall block
+- z block top vs player bottom bad when block z is raised
+- ring height too low in iso view when on block
+- missile cylinder shadow not aligning in iso view
+- choppy gamepad aim

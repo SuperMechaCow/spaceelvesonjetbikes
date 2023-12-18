@@ -8,94 +8,106 @@
 ########  ###    ### ###     ### ###    ### ###     ###  ########     ###     ########## ###    ###
 */
 class Character {
-    constructor(id, spawnx, spawny, parent) {
+    constructor(id, spawnx, spawny, parent, options) {
         this.id = id;
+        this.name = '';
         this.parent = parent;
         this.active = true;
         this.cleanup = true;
         this.team = 0;
-        
-        //Location
-        this.pos = new Vect3(spawnx, spawny, 0);
-        this.radius = 24;
-        this.height = 24;
-        this.tube = new Cylinder(this.pos, this.radius, this.height);
-        this.aim = new Vect3(0,0,0);
-        this.angle = new Vect3(0,0,0);
+        this.teams = [this.team];
+        this.target = null;
 
-        this.hover = 12;
+        /*
+          ___        _ _   _            ___       _
+         | _ \___ __(_) |_(_)___ _ _   |   \ __ _| |_ __ _
+         |  _/ _ (_-< |  _| / _ \ ' \  | |) / _` |  _/ _` |
+         |_| \___/__/_|\__|_\___/_||_| |___/\__,_|\__\__,_|
 
-        this.x = spawnx;
-        this.y = spawny;
-        this.z = 0;
-        this.w = 48;
-        this.h = 48;
-        this.d = 24;
-        
-        //Speed
-        this.speed = new Vect3(0,0,0);
-        this.accel = new Vect3(0,0,0);
+        */
+        this.HB = new Cylinder(new Vect3(spawnx, spawny, 0), 8, 32);
+        this.aim = new Vect3(0, 0, 0);
+        this.angle = new Vect3(0, 0, 0);
+        this.floor = 0;
 
-        this.xspeed = 0;
-        this.yspeed = 0;
-        this.zspeed = 0;
-        this.xytrueSpeed = function () { return (((Math.abs(this.xspeed) + Math.abs(this.yspeed)) / 2)) };
-        this.trueSpeed = function () { return (((Math.abs(this.xspeed) + Math.abs(this.yspeed) + Math.abs(this.zspeed)) / 3)) };
-        this.maxSpeed = 8;
-        this.speedMulti = 0.25;
-        this.frictionMulti = 1;
-        this.brakes = 1.5;
-        this.lungeSpeed = 5;
-        this.lungeCost = 100;
-        this.jumpCost = 20;
-        this.airtime = 0;
-        this.wind = true;
-        this.landable = true;
-        this.weight = 0.1;
-        //Stats
-        this.hp = 100;
-        this.hp_max = 100;
-        this.power = 300;
-        this.power_max = 300;
-        this.threatMulti = 1;
-        this.accuracy = 0.1; // Spread magnitude of weapon
-        //Items
-        this.item = 1;
+        this.bouyancy = 1;
+        this.hover = 0; // 12
+
+        /*
+          ___ _           _
+         | _ \ |_ _  _ __(_)__ ___
+         |  _/ ' \ || (_-< / _(_-<
+         |_| |_||_\_, /__/_\__/__/
+                  |__/
+        */
+        this.speed = new Vect3(0, 0, 0);            // Represents the current speed of the character in the x, y, and z directions.
+        this.maxSpeed = new Vect3(8, 8, 12);        // Represents the maximum speed of the character in the x, y, and z directions.
+        this.mom = new Vect3(0, 0, 0);              // Represents the momentum of the character in the x, y, and z directions.
+        this.accel = new Vect3(0.15, 0.15, 1);      // Represents the acceleration of the character in the x, y, and z directions.
+        this.airAccel = new Vect3(0.08, 0.08, 1);   // Represents the air acceleration of the character in the x, y, and z directions.
+        this.brace = 0;                             // Represents the amount of "bracing" the character is doing. 0 = no "bracing", 1 = full "bracing".
+        this.solid = true;                          // Represents whether or not the character is solid.   
+        this.colliders = [];                        // Represents an array of colliders associated with the character.
+
+        /*
+          ___ _        _
+         / __| |_ __ _| |_ ___
+         \__ \  _/ _` |  _(_-<
+         |___/\__\__,_|\__/__/
+
+        */
+        this.hp = 100;          // Health Points
+        this.hp_max = 100;      // Max Health Points
+        this.accuracy = 0.1;    // Spread magnitude of weapon
+        this.pp = 100;          // Power Points
+        this.pp_max = 100;      // Max Power Points
+
+        /*
+          ___ _
+         |_ _| |_ ___ _ __  ___
+          | ||  _/ -_) '  \(_-<
+         |___|\__\___|_|_|_/__/
+
+        */
+        this.item = 0;
         this.inventory = [new Pistol(), new Flamer(), new JumpDropper()];
         this.ammo = {
-            pistol: 25,
-            flamer: 25,
-            jumpdropper: 3
+            plasma: 2,
+            plasmaMax: 5,
+            ballistic: 2,
+            ballisticMax: 5
         }
-        //Graphics
+
+        /*
+           ___               _    _
+          / __|_ _ __ _ _ __| |_ (_)__ ___
+         | (_ | '_/ _` | '_ \ ' \| / _(_-<
+          \___|_| \__,_| .__/_||_|_\__/__/
+                       |_|
+        */
         this.img = new Image();
-        this.gfx = 'img/sprites/jetbike';
-        this.leftgfx = 'img/sprites/jetbike_l';
-        this.img.src = this.gfx + '.png'
-        this.bot = false;
-        this.color = '#FF0000';
-        this.tags = [];
+        this.gfx = 'img/sprites/lilguy';
+        this.color = [255, 0, 0];
+        this.faceCamera = true;
         this.shadow = {
-            active: true,
-            w: 48,
-            h: 24,
-            d: 200,
-            x: 0,
-            y: this.h / 2,
-            pos: new Vect3(0, this.h/2, 0),
-            width: new Vect3(48, 24, 200)
+            img: new Image()
         }
-        this.shadowImg = new Image();
-        this.shadowImg.src = "img/sprites/shadow.png";
-        this.exhaust = 0;
-        //SFX
-        this.touchSFX = new Audio('sfx/hardhit_01.wav');
-        this.jumpSFX = new Audio('sfx/jump_01.wav');
-        this.lungeSFX = new Audio('sfx/pup_01.wav');
-        this.brakeSFX = new Audio('sfx/exp_01.wav');
-        //Misc?
-        this.lastColBlock = null;
-        this.lastColNPC = null;
+        this.shadow.img.src = 'img/sprites/shadow.png';
+
+        /*
+            ___       _   _
+           / _ \ _ __| |_(_)___ _ _  ___
+          | (_) | '_ \  _| / _ \ ' \(_-<
+           \___/| .__/\__|_\___/_||_/__/
+                |_|
+        */
+        if (typeof options === 'object')
+            for (var key of Object.keys(options)) {
+                this[key] = options[key];
+            }
+        this.leftgfx = this.gfx + '_l'; // Set this after options so you only have to set gfx
+        this.img.src = this.gfx + '.png'
+        this.runFunc = [];
     }
 
     /*
@@ -107,175 +119,340 @@ class Character {
     #+#    #+#    #+#     #+#        #+#
     ########     ###     ########## ###
     */
+
     step(controller) {
         if (this.active) {
-            if (this.power < this.power_max) {
-                if (Math.abs(this.xspeed) <= game.match.map.collideDamageSpeed && Math.abs(this.yspeed) <= game.match.map.collideDamageSpeed)
-                this.power++;
-            if (this.zspeed < 0)
-            this.power -= this.zspeed;
-                if (this.power > this.power_max) this.power = this.power_max;
+            this.pp += 1;
+            this.floor = 0;
+
+            //Reset Momentum
+            this.mom = new Vect3();
+
+            /*
+                     _ _        _     _                _
+              __ ___| | |___ __| |_  (_)_ _  _ __ _  _| |_
+             / _/ _ \ | / -_) _|  _| | | ' \| '_ \ || |  _|
+             \__\___/_|_\___\__|\__| |_|_||_| .__/\_,_|\__|
+                                            |_|
+            */
+            if (controller.buttons.moveLeft.current) this.mom.x = -1;
+            if (controller.buttons.moveRight.current) this.mom.x = 1;
+            if (controller.buttons.moveUp.current) this.mom.y = -1;
+            if (controller.buttons.moveDown.current) this.mom.y = 1;
+            if (controller.buttons.jump.current && controller.buttons.brake.current) {
+                this.brace = 1;
             }
-            //Wind
-            // this.xspeed += game.match.map.xwind * (1 - this.weight);
-            // this.yspeed += game.match.map.ywind * (1 - this.weight);
-            // Friction
-            this.xspeed *= game.match.map.friction * this.frictionMulti;
-            this.yspeed *= game.match.map.friction * this.frictionMulti;
-            if (this.z > 0) {
-                this.zspeed -= game.match.map.gravity;
-                // High Score Tracking
-                if (!this.bot) {
-                    this.airtime++;
-                    if (game.player.best.airtime < this.airtime) game.player.best.airtime = this.airtime
+            else {
+                if (controller.buttons.jump.current) {
+                    // If the player has positive power points (pp)
+                    if (this.pp > 2) {
+                        // Set the z momentum to 1 (move upwards)
+                        this.mom.z = 1;
+                        // Decrease the power points by 1
+                        this.pp -= 2;
+                    }
                 }
-            } else {
-                this.airtime = 0;
-            }
-            if (this.z < 0) this.zspeed += game.match.map.gravity;
-            // if (Math.abs(this.z) < 4) this.zspeed *= 0.8
-            if (Math.abs(this.zspeed) < 0.5 && Math.abs(this.z) < 2) {
-                this.zspeed = 0;
-                this.z = 0;
-            }
-            this.zspeed *= game.match.map.gravityFriction * this.frictionMulti;
-            if (!this.bot) this.userInput(controller);
-            else this.AI();
-            // Slow down when hitting max speed
-            if (this.xspeed > game.match.map.maxSpeed) this.xspeed = game.match.map.maxSpeed;
-            else if (this.xspeed < game.match.map.maxSpeed * -1) this.xspeed = game.match.map.maxSpeed * -1;
-            if (this.yspeed > game.match.map.maxSpeed) this.yspeed = game.match.map.maxSpeed;
-            else if (this.yspeed < game.match.map.maxSpeed * -1) this.yspeed = game.match.map.maxSpeed * -1;
-            // Make the move
-            this.x += this.xspeed;
-            this.y += this.yspeed;
-            // Gravity
-            this.z += this.zspeed;
-            if (this.zspeed > 5)
-                if (this.jumpSFX.duration <= 0 || this.jumpSFX.paused)
-                    this.jumpSFX.play();
-            if (this.z < this.hover * -1) {
-                this.brakeSFX.play();
-                this.z = this.hover * -1;
-                this.zspeed *= -1;
-                this.xspeed *= game.match.map.groundFriction;
-                this.yspeed *= game.match.map.groundFriction;
-                let tempx = (Math.random() * 3) - 1.5;
-                let tempz = (Math.random() * 3) - 1.5;
-                game.match.map.debris.push(new Debris(allID++, this.x, this.y + (this.h / 2), { wind: false, w: 16, h: 12, z: this.z, color: '#995500', livetime: 60, dying: true, landable: true }))
-                game.match.map.debris.push(new Debris(allID++, this.x, this.y + (this.h / 2), { wind: false, w: 6, h: 6, xspeed: tempx, zspeed: 5 + tempz, z: this.z + this.hover, color: '#995500', livetime: 60, dying: true, landable: true }))
+                if (controller.buttons.brake.current) this.mom.z = -1;
+
             }
 
+            /*
+                 _             _   _
+              __| |_  ___  ___| |_(_)_ _  __ _
+             (_-< ' \/ _ \/ _ \  _| | ' \/ _` |
+             /__/_||_\___/\___/\__|_|_||_\__, |
+                                         |___/
+            */
+            if (controller.buttons.fire.current != controller.buttons.fire.last) {
+                if (controller.buttons.fire.current) {
+                    const xMulti = (game.player.camera._3D) ? game.player.camera.angle : 1;
+                    let aimX = this.parent.controller.aimX * xMulti;
+                    let aimY = this.parent.controller.aimY;
+                    let aimZ = 0;
+                    if (game.player.camera._3D) {
+                        aimZ = aimY * game.player.camera.angle;
+                        aimY = aimY * (1 - game.player.camera.angle);
+                    }
+                    this.inventory[this.item].use(this, aimX, aimY, aimZ, 0, { color: this.color });
+                }
+            }
 
-            //Particle FX
-            let tempx = (Math.random() * 1) - 0.5;
-            let tempy = (Math.random() * 1) - 0.5;
-            if (ticks % 4 == 0) game.match.map.debris.push(new Debris(allID++, this.x + this.exhaust, this.y, { w: 6, h: 6, xspeed: tempx, yspeed: tempy, z: this.z, color: '#dddddd', livetime: 10, dying: true, landable: false }));
+            /*
+              __  __            ___                  _
+             |  \/  |__ ___ __ / __|_ __  ___ ___ __| |
+             | |\/| / _` \ \ / \__ \ '_ \/ -_) -_) _` |
+             |_|  |_\__,_/_\_\ |___/ .__/\___\___\__,_|
+                                   |_|
+            */
+            if (Math.abs(this.speed.x) > this.maxSpeed) this.mom.x = 0;
+            if (Math.abs(this.speed.y) > this.maxSpeed) this.mom.y = 0;
 
-            // Break your records!
-            if (!this.bot && game.player.best.air < this.z) game.player.best.air = this.z
-            if (!this.bot && game.player.best.speed < this.xytrueSpeed()) game.player.best.speed = this.xytrueSpeed()
+            /*
+              ___    _    _   _                         _     _             _              _   _
+             | __| _(_)__| |_(_)___ _ _    __ _ _ _  __| |   /_\  __ __ ___| |___ _ _ __ _| |_(_)___ _ _
+             | _| '_| / _|  _| / _ \ ' \  / _` | ' \/ _` |  / _ \/ _/ _/ -_) / -_) '_/ _` |  _| / _ \ ' \
+             |_||_| |_\__|\__|_\___/_||_| \__,_|_||_\__,_| /_/ \_\__\__\___|_\___|_| \__,_|\__|_\___/_||_|
 
-            // Check for out of bounds
-            if (this.x + (this.w / 2) > game.match.map.w) {
-                this.x = game.match.map.w - (this.w / 2);
-                if (Math.abs(this.xspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(this.xspeed);
-                this.xspeed *= -1;
+            */
+            if (this.HB.pos.z <= game.match.map.floor) { //Ground
+                //Accelerate Ground
+                this.speed.x += this.mom.x * this.accel.x;
+                this.speed.y += this.mom.y * this.accel.y;
+                this.speed.z += this.mom.z * this.accel.z;
+                // Friction Ground
+                this.speed.x *= 1 - game.match.map.friction.ground;
+                this.speed.y *= 1 - game.match.map.friction.ground;
+            } else { //Air
+                //Accelerate Air
+                this.speed.x += this.mom.x * this.airAccel.x;
+                this.speed.y += this.mom.y * this.airAccel.y;
+                this.speed.z += this.mom.z * this.airAccel.z;
+                //Friction Air
+                this.speed.x *= 1 - game.match.map.friction.air;
+                this.speed.y *= 1 - game.match.map.friction.air;
             }
-            if (this.x < (this.w / 2)) {
-                this.x = (this.w / 2);
-                if (Math.abs(this.xspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(this.xspeed);
-                this.xspeed *= -1;
+            this.speed.z *= 1 - game.match.map.friction.air; //Air friction always applies to falling/rising
+
+            /*
+                 _
+              __| |_ ___ _ __
+             (_-<  _/ _ \ '_ \
+             /__/\__\___/ .__/
+                        |_|
+            */
+            if (Math.abs(this.speed.x) < game.match.map.stopZone) this.speed.x = 0; //Stop if you are below the stop speed
+            if (Math.abs(this.speed.y) < game.match.map.stopZone) this.speed.y = 0;
+            // if (Math.abs(this.speed.z) < game.match.map.stopZone) this.speed.z = 0; //I don't know if this one makes a difference
+
+            /*
+              _
+             | |_  _____ _____ _ _
+             | ' \/ _ \ V / -_) '_|
+             |_||_\___/\_/\___|_|
+
+            */
+            if (this.HB.pos.z < this.hover) { //If you are lower than the hover threshold
+                this.speed.z += Math.max((1 - (this.HB.pos.z / this.hover)) * this.bouyancy, 0) + game.match.map.gravity;
+                //Move up by your bouyancy times the percent between your z and you hover, not negative
+                //Also cancel out gravity
             }
-            if (this.y + (this.h / 2) > game.match.map.h) {
-                this.y = game.match.map.h - (this.h / 2);
-                if (Math.abs(this.yspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(this.yspeed);
-                this.yspeed *= -1;
+            else if (this.HB.pos.z > this.hover) { //If you are higher than the hover threshold
+                this.speed.z += Math.max((1 - ((this.HB.pos.z - this.hover) / this.hover)) * this.bouyancy, 0); //Move up by your bouyancy times the percent over the hover, not negative
             }
-            if (this.y < (this.h / 2)) {
-                this.y = (this.h / 2);
-                if (Math.abs(this.yspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(this.yspeed);
-                this.yspeed *= -1;
+
+            /*
+                                _ _
+              __ _ _ _ __ ___ _(_) |_ _  _
+             / _` | '_/ _` \ V / |  _| || |
+             \__, |_| \__,_|\_/|_|\__|\_, |
+             |___/                    |__/
+            */
+            this.speed.z -= game.match.map.gravity;
+
+
+            /*
+              #####
+             #     #  ####  #      #      #  ####  #  ####  #    #
+             #       #    # #      #      # #      # #    # ##   #
+             #       #    # #      #      #  ####  # #    # # #  #
+             #       #    # #      #      #      # # #    # #  # #
+             #     # #    # #      #      # #    # # #    # #   ##
+              #####   ####  ###### ###### #  ####  #  ####  #    #
+
+            */
+            /*
+               ___     _ _         _
+              / __|  _| (_)_ _  __| |___ _ _
+             | (_| || | | | ' \/ _` / -_) '_|
+              \___\_, |_|_|_||_\__,_\___|_|
+                  |__/
+            */
+            for (let c of game.match.bots) {
+                if (c.character === this) //Don't collide with yourself
+                    continue;
+                c = c.character; //Get the character from the bot
+                if (this.HB.above(c.HB)) //If you are above the block and the block is not solid
+                    this.floor = c.HB.pos.z + c.HB.height; //Set the floor to the block's height
+                let side = this.HB.collide(c.HB); //Check for collision
+                if (side) c.trigger(this, side);
+                if (c.solid && this.team != c.team) //If the other character is solid
+                    switch (side) { //See which side you collided on
+                        case 'side': //If you collided on the side
+                            let xDistance = this.HB.pos.x - c.HB.pos.x;
+                            let yDistance = this.HB.pos.y - c.HB.pos.y;
+                            //get the distance between the two characters
+                            let distance = Math.sqrt(xDistance ** 2 + yDistance ** 2);
+                            if (distance > 0) {
+                                //find the x and y angles between the two characters, normalized to 1
+                                let xAngle = xDistance / distance;
+                                let yAngle = yDistance / distance;
+                                //move the character to the edge of the other character
+                                this.HB.pos.x = c.HB.pos.x + (c.HB.radius + this.HB.radius) * xAngle;
+                                this.HB.pos.y = c.HB.pos.y + (c.HB.radius + this.HB.radius) * yAngle;
+                            } else {
+                                this.HB.pos.x += c.HB.radius + this.HB.radius;
+                            }
+                            this.speed.x += c.speed.x * game.match.map.collideReflect; //Reflect the speed and mom by the map's reflect value
+                            this.speed.y += c.speed.y * game.match.map.collideReflect;
+                            c.speed.x -= this.speed.x * game.match.map.collideReflect;
+                            c.speed.y -= this.speed.y * game.match.map.collideReflect;
+                            break;
+                        case 'top': //If you collided on the top
+                            //move the character to the edge of the other character
+                            this.HB.pos.z = c.HB.pos.z + c.HB.height;
+                            break;
+                        case 'bottom': //If you collided on the bottom
+                            //move the character to the edge of the other character
+                            this.HB.pos.z = c.HB.pos.z - this.HB.height;
+                            break;
+                        case 'center': //If you collided on the center
+                            this.HB.pos.x += c.HB.radius + this.HB.radius;
+                            break;
+                        default:
+                            //break if you didn't collide
+                            break;
+                    }
             }
-            //Check HP
-            if (this.hp <= 0) { //Dead
+
+            /*
+              ___ _         _
+             | _ ) |___  __| |__ ___
+             | _ \ / _ \/ _| / /(_-<
+             |___/_\___/\__|_\_\/__/
+
+            */
+            for (const c of game.match.map.blocks) { //For each block
+                if (this.HB.above(c.HB) && !c.solid) //If you are above the block and the block is not solid
+                    this.floor = c.HB.pos.z + c.HB.volume.z; //Set the floor to the block's height
+                let side = this.HB.collide(c.HB); //Check for collision
+                if (side) c.trigger(this, side); //Trigger the block's trigger function
+                if (c.solid) //If the block is solid
+                    switch (side) { //see which side you collided on
+                        case 'front':
+                            //Reflect the speed and mom by the map's reflect value
+                            this.speed.y *= -c.reflection;
+                            this.mom.y *= -c.reflection;
+                            //Move the character to the edge of the block
+                            this.HB.pos.y = c.HB.pos.y + c.HB.volume.y + this.HB.radius;
+                            break;
+                        case 'rear':
+                            this.speed.y *= -c.reflection;
+                            this.mom.y *= -c.reflection;
+                            this.HB.pos.y = c.HB.pos.y - this.HB.radius;
+                            break;
+                        case 'right':
+                            this.speed.x *= -c.reflection;
+                            this.mom.x *= -c.reflection;
+                            this.HB.pos.x = c.HB.pos.x + c.HB.volume.x + this.HB.radius;
+                            break;
+                        case 'left':
+                            this.speed.x *= -c.reflection;
+                            this.mom.x *= -c.reflection;
+                            this.HB.pos.x = c.HB.pos.x - this.HB.radius;
+                            break;
+                        case 'top':
+                            this.speed.z *= -c.reflection;
+                            this.mom.z *= -c.reflection;
+                            this.HB.pos.z = c.HB.pos.z + c.HB.volume.z;
+                            break;
+                        case 'bottom':
+                            this.speed.z *= -c.reflection;
+                            this.mom.z *= -c.reflection;
+                            this.HB.pos.z = c.HB.pos.z - this.HB.height;
+                            break;
+                        default:
+                            //break if you didn't collide
+                            break;
+                    }
+            }
+
+            /*
+              __  __      _         _   _          __  __
+             |  \/  |__ _| |_____  | |_| |_  ___  |  \/  |_____ _____
+             | |\/| / _` | / / -_) |  _| ' \/ -_) | |\/| / _ \ V / -_)
+             |_|  |_\__,_|_\_\___|  \__|_||_\___| |_|  |_\___/\_/\___|
+
+            */
+            this.HB.pos.x += this.speed.x;
+            this.HB.pos.y += this.speed.y;
+            this.HB.pos.z += this.speed.z;
+
+            /*
+               ___       _          __   ___                   _
+              / _ \ _  _| |_   ___ / _| | _ ) ___ _  _ _ _  __| |___
+             | (_) | || |  _| / _ \  _| | _ \/ _ \ || | ' \/ _` (_-<
+              \___/ \_,_|\__| \___/_|   |___/\___/\_,_|_||_\__,_/__/
+
+            */
+            // If the character is outside of the map boundaries
+            if (this.HB.pos.x < 0) {
+                this.HB.pos.x = 0;
+                // refelct the speed and mom by the map's reflect value
+                this.speed.x *= -game.match.map.collideReflect;
+                this.mom.x *= -game.match.map.collideReflect;
+                // sounds.dam1.play();
+            }
+            if (this.HB.pos.x > game.match.map.w) {
+                this.HB.pos.x = game.match.map.w;
+                this.speed.x *= -game.match.map.collideReflect;
+                this.mom.x *= -game.match.map.collideReflect;
+                // sounds.dam1.play();
+            }
+            if (this.HB.pos.y < 0) {
+                this.HB.pos.y = 0;
+                this.speed.y *= -game.match.map.collideReflect;
+                this.mom.y *= -game.match.map.collideReflect;
+                // sounds.dam1.play();
+            }
+            if (this.HB.pos.y > game.match.map.h) {
+                this.HB.pos.y = game.match.map.h;
+                this.speed.y *= -game.match.map.collideReflect;
+                this.mom.y *= -game.match.map.collideReflect;
+                // sounds.dam1.play();
+            }
+
+            /*
+               ___                      _    ___     _ _ _    _
+              / __|_ _ ___ _  _ _ _  __| |  / __|___| | (_)__(_)___ _ _
+             | (_ | '_/ _ \ || | ' \/ _` | | (__/ _ \ | | (_-< / _ \ ' \
+              \___|_| \___/\_,_|_||_\__,_|  \___\___/_|_|_/__/_\___/_||_|
+
+            */
+            if (-this.speed.z > this.HB.pos.z + game.match.map.floor) {
+                this.HB.pos.z = 0;
+                // this.speed.z *= -0.5
+                // sounds.dam1.play();
+            }
+
+            /*
+              ___                  _ _    __              _   _
+             | _ \_  _ _ _    __ _| | |  / _|_  _ _ _  __| |_(_)___ _ _  ___
+             |   / || | ' \  / _` | | | |  _| || | ' \/ _|  _| / _ \ ' \(_-<
+             |_|_\\_,_|_||_| \__,_|_|_| |_|  \_,_|_||_\__|\__|_\___/_||_/__/
+
+            */
+            for (const func of this.runFunc) {
+                func();
+            }
+
+            if (this.hp <= 0) {
                 this.active = false;
-                this.brakeSFX.play();
-                game.match.map.debris.push(new Debris(allID++, this.x, this.y + (this.h / 2), { frictionMulti: 1, w: 36, h: 12, z: this.z, xspeed: this.xspeed, yspeed: this.yspeed, zspeed: this.zspeed, weight: this.weight, color: '#990000', livetime: 50, dying: true, landable: true }))
+                if (this === game.player.character) {
+                    game.paused = true;
+                    // game.player.findTarget();
+                    // game.player.camera.target = game.player.target;
+                }
             }
         }
     }
 
-    AI() {
-        return
-    }
-
-    userInput(controller) {
-        //Airborne
-        if (this.z > game.match.map.windH) {
-            controller.buttons.moveRight.current *= 0.1;
-            controller.buttons.moveLeft.current *= 0.1;
-            controller.buttons.moveUp.current *= 0.1;
-            controller.buttons.moveDown.current *= 0.1;
-        }
-        // Brakes
-        if (controller.buttons.brake.current) this.zspeed -= this.brakes;
-        // if (controller.buttons.brake.current)
-        //     this.brakeSFX.play();
-        // Lunge
-        if (controller.buttons.boost.current != controller.buttons.boost.last && this.power >= this.lungeCost) {
-            if (controller.buttons.boost.current) {
-                if (this.lungeSFX.duration <= 0 || this.lungeSFX.paused)
-                    this.lungeSFX.play();
-                if (controller.right) this.xspeed += this.lungeSpeed;
-                if (controller.left) this.xspeed -= this.lungeSpeed;
-                if (controller.down) this.yspeed += this.lungeSpeed;
-                if (controller.up) this.yspeed -= this.lungeSpeed;
-                this.power -= this.lungeCost;
-            }
-            controller.buttons.boost.last = controller.buttons.boost.current;
-        }
-        // Shoot
-
-        //Torrent code (needs single clicks to be handled by item)
-        // if (controller.buttons.fire.current)
-        //     this.inventory[this.item].use(this, 0);
-
-        // Single shot code
-        if (controller.buttons.fire.current != controller.buttons.fire.last) {
-            if (controller.buttons.fire.current)
-                this.inventory[this.item].use(this, game.player.controller.aimX, game.player.controller.aimY, 0);
-            controller.buttons.fire.last = controller.buttons.fire.current;
-        }
-
-        // Jump
-        if (controller.buttons.jump.current&& this.power >= this.jumpCost) {
-            this.zspeed += 2
-            this.power -= this.jumpCost
-        }
-        // TODO: Account for moving both directions at once goign too fast
-        // Apply player input and character speed if not going faster than max speed
-        if (controller.buttons.moveRight.current && this.xspeed < this.maxSpeed) this.xspeed += controller.buttons.moveRight.current * this.speedMulti;
-        else if (controller.buttons.moveLeft.current && this.xspeed > this.maxSpeed * -1) this.xspeed -= controller.buttons.moveLeft.current * this.speedMulti;
-        if (controller.buttons.moveUp.current && this.yspeed > this.maxSpeed * -1) this.yspeed -= controller.buttons.moveUp.current * this.speedMulti;
-        else if (controller.buttons.moveDown.current && this.yspeed < this.maxSpeed) this.yspeed += controller.buttons.moveDown.current * this.speedMulti;
-        // Change the graphics based on direction
-        if (controller.buttons.moveLeft.current < controller.right) {
-            this.img.src = this.gfx + '.png';
-            this.exhaust = - (this.w / 2)
-        }
-        if (controller.buttons.moveLeft.current > controller.right) {
-            this.img.src = this.leftgfx + '.png';
-            this.exhaust = (this.w / 2)
-        }
-
-        if (controller.buttons.weaponNext.current) {
-            this.item++;
-            if (this.item >= this.inventory.length) this.item = 0;
-        }
-        if (controller.buttons.weaponPrevious.current) {
-            this.item--;
-            if (this.item < 0) this.item = this.inventory.length-1;
+    unitColor(fullOpaque = 0) {
+        if (this.team == game.player.character.team) {
+            return `rgba(0,255,0, ${Math.max(Number(fullOpaque), game.player.interface.drawFriendlyRing)})`;
+        } else if (game.player.character.teams.includes(this.team)) {
+            return `rgba(255,255,0, ${Math.max(Number(fullOpaque), game.player.interface.drawNeutralRing)})`;
+        } else {
+            return `rgba(255,0,0, ${Math.max(Number(fullOpaque), game.player.interface.drawEnemyRing)})`;
         }
     }
 
@@ -289,323 +466,379 @@ class Character {
     #########  ###    ### ###     ###   ###   ###
     */
     draw() {
-        let compareX = game.player.camera.x - this.x;
-        let compareY = game.player.camera.y - this.y;
-        let compareZ = game.player.camera.z - this.z;
-        if (game.debug) {
-            ctx.fillStyle = "#FF0000";
-            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2), this.w, this.h);
-            ctx.fillStyle = "#0000FF";
-            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
-            ctx.fillStyle = "#000000";
-            ctx.fillRect((game.window.w / 2) - 2, (game.window.h / 2) - 2, 4, 4);
-            ctx.beginPath();
-            ctx.arc(
-                game.window.w / 2 - compareX - (this.player.character.w / 2) + this.player.character.tube.radius,
-                game.window.h / 2 - compareY - (this.player.character.h / 2) + this.player.character.tube.radius - this.player.character.z,
-                game.player.character.tube.radius,
-                0, 2 * Math.PI);
-            ctx.arc(
-                game.window.w / 2 - compareX - (this.player.character.w / 2) + this.player.character.tube.radius,
-                game.window.h / 2 - compareY - (this.player.character.h / 2) + this.player.character.tube.radius - this.player.character.tube.height - this.player.character.z,
-                game.player.character.tube.radius,
-                0, 2 * Math.PI);
-            ctx.stroke();
+        if (this.active) {
+            /*
+                   _    _                        _    _
+              _ __(_)__| |__  __ _ _ _ __ _ _ __| |_ (_)__
+             | '_ \ / _| / / / _` | '_/ _` | '_ \ ' \| / _|
+             | .__/_\__|_\_\ \__, |_| \__,_| .__/_||_|_\__|
+             |_|             |___/         |_|
+            */
+            if (this.mom.x < 0) this.img.src = this.leftgfx + '.png'
+            if (this.mom.x > 0) this.img.src = this.gfx + '.png'
+
+
+            let compareX = game.player.camera.x - this.HB.pos.x;
+            let compareY = game.player.camera.y - this.HB.pos.y;
+
+
+            if (game.player.camera._3D) {
+                this.draw3D();
+            } else {
+
+                /*
+                     _            _
+                  __| |_  __ _ __| |_____ __ __
+                 (_-< ' \/ _` / _` / _ \ V  V /
+                 /__/_||_\__,_\__,_\___/\_/\_/
+    
+                */
+                ctx.globalAlpha = 0.4;
+                let shadowShrink = this.HB.radius * Math.min(((this.HB.pos.z - this.floor) / 128), 1)
+                ctx.drawImage(
+                    this.shadow.img,
+                    game.window.w / 2 - compareX - this.HB.radius + shadowShrink,
+                    game.window.h / 2 - compareY - this.HB.radius + shadowShrink - this.floor,
+                    this.HB.radius * 2 - shadowShrink * 2,
+                    this.HB.radius * 2 - shadowShrink * 2
+                );
+                ctx.globalAlpha = 1;
+
+                /*
+                          _        _                 _
+                  ___ ___| |___ __| |_ ___ _ _   _ _(_)_ _  __ _
+                 (_-</ -_) / -_) _|  _/ _ \ '_| | '_| | ' \/ _` |
+                 /__/\___|_\___\__|\__\___/_|   |_| |_|_||_\__, |
+                                                           |___/
+                */
+                ctx.strokeStyle = this.unitColor();
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(
+                    game.window.w / 2 - compareX,
+                    game.window.h / 2 - compareY - this.floor,
+                    this.HB.radius,
+                    this.HB.radius,
+                    0, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                // draw an arc around the bottom half of the selector ring offest by 10 pixels outside that represents the character's health
+                // draw bar background
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.beginPath();
+                ctx.arc(
+                    game.window.w / 2 - compareX,
+                    game.window.h / 2 - compareY - this.floor,
+                    this.HB.radius + 10,
+                    Math.PI,
+                    Math.PI * 2,
+                    true
+                );
+                ctx.stroke();
+                ctx.strokeStyle = this.unitColor(true);
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    game.window.w / 2 - compareX,
+                    game.window.h / 2 - compareY - this.floor,
+                    this.HB.radius + 10,
+                    Math.PI,
+                    Math.PI * (1 - (this.hp / this.hp_max)),
+                    true
+                );
+                ctx.stroke();
+
+                /*
+                     _                     _
+                  __| |_  __ _ _ _ __ _ __| |_ ___ _ _
+                 / _| ' \/ _` | '_/ _` / _|  _/ -_) '_|
+                 \__|_||_\__,_|_| \__,_\__|\__\___|_|
+    
+                */
+                ctx.drawImage(
+                    this.img,
+                    game.window.w / 2 - compareX - this.HB.radius,
+                    game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z - sineAnimate(1, 0.1),
+                    this.HB.radius * 2, this.HB.height
+                );
+                if (game.debug) {
+                    ctx.fillStyle = "#FF0000";
+                    ctx.fillRect(game.window.w / 2 - compareX - 2, game.window.h / 2 - compareY - 2, 4, 4);
+                    ctx.strokeStyle = "#FF0000";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        game.window.w / 2 - compareX,
+                        game.window.h / 2 - compareY - this.HB.pos.z,
+                        this.HB.radius,
+                        this.HB.radius,
+                        0, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        game.window.w / 2 - compareX,
+                        game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z,
+                        this.HB.radius,
+                        this.HB.radius,
+                        0, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    let newX = this.HB.pos.x + this.speed.x;
+                    let newY = this.HB.pos.y + this.speed.y;
+                    ctx.strokeStyle = "#FFFFFF"
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(game.window.w / 2, game.window.h / 2);
+                    compareX = game.player.camera.x - newX;
+                    compareY = game.player.camera.y - newY;
+                    ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
+                    ctx.stroke();
+                }
+                // Draw character's name above their head
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "12px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(this.name, game.window.w / 2 - compareX, game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z - 10);
+
+            }
+
+            /*
+              _                     _     _ _
+             | |_ __ _ _ _ __ _ ___| |_  | (_)_ _  ___
+             |  _/ _` | '_/ _` / -_)  _| | | | ' \/ -_)
+              \__\__,_|_| \__, \___|\__| |_|_|_||_\___|
+                          |___/
+            */
+            // This can draw a line to the closest part of a rectangle
+            // except it broke at some point when i moved to utils
+            // It can still draw to the XY which is good for tubes, but not blocks
+            // if (this.target) {
+            //     ctx.strokeStyle = "#FF0000"
+            //     ctx.lineWidth = 2;
+            //     ctx.beginPath();
+            //     ctx.moveTo(game.window.w / 2, game.window.h / 2);
+            //     compareX = game.player.camera.x - this.target.HB.pos.x; //If you change this to the target.pos
+            //     compareY = game.player.camera.y - this.target.HB.pos.y; //If you change this to the target.pos
+            //     ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
+            //     ctx.stroke();
+            // }
         } else {
-            this.shadow.w = (this.w - this.hover) * (1 - (((this.z > this.shadow.d) ? this.shadow.d : this.z) / this.shadow.d));
-            this.shadow.h = this.shadow.w / 2;
-            ctx.globalAlpha = 0.5;
-            ctx.drawImage(this.shadowImg, game.window.w / 2 - compareX - (this.shadow.w / 2), game.window.h / 2 - compareY - (this.shadow.h / 2) + this.shadow.y, this.shadow.w, this.shadow.h);
-            ctx.globalAlpha = 1;
-            ctx.drawImage(this.img, game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
+            // draw number of waves to center of screen
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(`Waves: ${game.match.waves}`, game.window.w / 2, game.window.h / 2);
+
         }
-
-        // In case I want to use arches for power bars or abilities
-        // ctx.strokeStyle = 'blue';
-        // ctx.fillStyle = 'rgba(128,128,255,0.1)';
-        // ctx.lineWidth = 2;
-
-        // ctx.beginPath();
-        // ctx.arc(game.window.w / 2 - compareX, game.window.h / 2 - compareY - this.z, 48, 0, 2 * Math.PI);
-
-        // ctx.stroke();
-        // ctx.fill();
     }
 
     /*
-          ::::::::   ::::::::  :::        :::        ::::::::::: :::::::::  ::::::::::
-        :+:    :+: :+:    :+: :+:        :+:            :+:     :+:    :+: :+:
-       +:+        +:+    +:+ +:+        +:+            +:+     +:+    +:+ +:+
-      +#+        +#+    +:+ +#+        +#+            +#+     +#+    +:+ +#++:++#
-     +#+        +#+    +#+ +#+        +#+            +#+     +#+    +#+ +#+
-    #+#    #+# #+#    #+# #+#        #+#            #+#     #+#    #+# #+#
-    ########   ########  ########## ########## ########### #########  ##########
+     ######                        #####  ######
+     #     # #####    ##   #    # #     # #     #
+     #     # #    #  #  #  #    #       # #     #
+     #     # #    # #    # #    #  #####  #     #
+     #     # #####  ###### # ## #       # #     #
+     #     # #   #  #    # ##  ## #     # #     #
+     ######  #    # #    # #    #  #####  ######
+    
     */
-    collide(colliders) {
-        for (const c of colliders) {
-            if (c != this) {
-                if (!c.tags.includes('debris') && c.team !== this.team && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) && this.z < c.d && c.z < this.d) {
-                    // THERE WAS A COLLISION!
-                    // Remember the things you collided with
-                    //Only npcs have teams
-                    if (c.team !== undefined) {
-                        this.lastColNPC = c;
-                        c.lastColNPC = this;
-                    }
-                    else {
-                        this.lastColBlock = c;
-                        c.lastColBlock = this;
-                    }
-                    let compareY = c.y - this.y;
-                    let compareX = c.x - this.x;
-                    if (!c.tags.includes('nocollide')) {
-                        let damCalc = 0;
-                        // Volume by distance
-                        let calcSound = 1; //Couldn't figure it out. Plz help my poor ears
-                        if (calcSound > 0) {
-                            this.touchSFX.volume = calcSound;
-                            this.touchSFX.play();
-                        }
-                        //Direction hit
-                        if (Math.abs(compareX) > Math.abs(compareY)) { //side hit
-                            if (this.x > c.x) this.x = c.x + c.w + 1; // Move this outside of the collider's space
-                            else this.x = c.x - (this.w / 2) - (c.w / 2) - 1;
-                            if (c.tags.includes('immobile')) {
-                                if (!c.tags.includes('nodamage')) {
-                                    damCalc = Math.abs(this.xspeed)
-                                    this.hp -= damCalc;
-                                }
-                            } else {
-                                if (Math.abs(this.xspeed) > game.match.map.collideDamageSpeed) {
-                                    damCalc = Math.abs(this.xspeed)
-                                    c.hp -= damCalc
-                                };
-                                if (Math.abs(c.xspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(c.xspeed);
-                                c.xspeed *= -1;
-                                c.xspeed += this.xspeed;
-                            }
-                            if (!c.tags.includes('nobounce'))
-                                this.xspeed *= -1;
-                        } else { //top/bottom hit
-                            if (this.y > c.y) this.y = c.y + c.h + 1;
-                            else this.y = c.y - (this.h / 2) - (c.h / 2) - 1;
-                            if (c.tags.includes('immobile')) {
-                                if (!c.tags.includes('nodamage')) {
-                                    damCalc = Math.abs(this.yspeed)
-                                    this.hp -= damCalc;
-                                }
-                            } else {
-                                if (Math.abs(this.yspeed) > game.match.map.collideDamageSpeed) {
-                                    damCalc = Math.abs(this.yspeed);
-                                    c.hp -= damCalc;
-                                }
-                                if (Math.abs(c.yspeed) > game.match.map.collideDamageSpeed) this.hp -= Math.abs(c.yspeed);
-                                c.yspeed *= -1;
-                                c.yspeed += this.yspeed;
-                            }
-                            if (!c.tags.includes('nobounce'))
-                                this.yspeed *= -1;
-                        }
-                        // NEEDS TOP HIT! Goomba stomp style
-                        if (!this.bot && game.player.best.damage < damCalc) game.player.best.damage = damCalc;
-                    }
-                }
-            }
+    draw3D() {
+
+        let compareX = game.player.camera.x - this.HB.pos.x;
+        let compareY = game.player.camera.y - this.HB.pos.y;
+
+        /*
+             _            _
+          __| |_  __ _ __| |_____ __ __
+         (_-< ' \/ _` / _` / _ \ V  V /
+         /__/_||_\__,_\__,_\___/\_/\_/
+        
+        */
+        ctx.globalAlpha = 0.4;
+        let shadowShrink = this.HB.radius * Math.min(((this.HB.pos.z - this.floor) / 128), 1)
+        ctx.drawImage(
+            this.shadow.img,
+            game.window.w / 2 - compareX - this.HB.radius + shadowShrink,
+            game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.radius + (this.HB.height * (1 - game.player.camera.angle)) + (shadowShrink * game.player.camera.angle) - (this.floor * (1 - game.player.camera.angle)),
+            (this.HB.radius * 2) - (shadowShrink * 2),
+            ((this.HB.radius * 2) - (shadowShrink * 2)) * game.player.camera.angle
+        );
+        ctx.globalAlpha = 1;
+
+        /*
+                  _        _                 _
+          ___ ___| |___ __| |_ ___ _ _   _ _(_)_ _  __ _
+         (_-</ -_) / -_) _|  _/ _ \ '_| | '_| | ' \/ _` |
+         /__/\___|_\___\__|\__\___/_|   |_| |_|_||_\__, |
+                                                   |___/
+        */
+        ctx.strokeStyle = this.unitColor();
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(
+            game.window.w / 2 - compareX,
+            game.window.h / 2 - (compareY * game.player.camera.angle) - (this.floor * (1 - game.player.camera.angle)),
+            this.HB.radius,
+            this.HB.radius * game.player.camera.angle,
+            0, 0, 2 * Math.PI);
+        ctx.stroke();
+        // draw an arc around the bottom half of the selector ring offest by 10 pixels outside that represents the character's health, and adjust for camera angle
+        // draw bar background
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.beginPath();
+        ctx.arc(
+            game.window.w / 2 - compareX,
+            game.window.h / 2 - (compareY * game.player.camera.angle) - (this.floor * (1 - game.player.camera.angle)),
+            this.HB.radius + 10,
+            Math.PI,
+            Math.PI * 2,
+            true
+        );
+        ctx.stroke();
+        ctx.strokeStyle = this.unitColor(true);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(
+            game.window.w / 2 - compareX,
+            game.window.h / 2 - (compareY * game.player.camera.angle) - (this.floor * (1 - game.player.camera.angle)),
+            this.HB.radius + 10,
+            Math.PI,
+            Math.PI * (1 - (this.hp / this.hp_max)),
+            true
+        );
+        ctx.stroke();
+
+        if (this.faceCamera)
+            ctx.drawImage(
+                this.img,
+                game.window.w / 2 - compareX - this.HB.radius,
+                game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.height - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle)) * (1 - game.paused)),
+                this.HB.radius * 2,
+                this.HB.height
+            );
+        else
+            ctx.drawImage(
+                this.img,
+                game.window.w / 2 - compareX - this.HB.radius,
+                game.window.h / 2 - (compareY * game.player.camera.angle) - (this.HB.height * (1 - game.player.camera.angle)) - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle)) * (1 - game.paused)),
+                this.HB.radius * 2,
+                this.HB.height * (1 - game.player.camera.angle)
+            );
+
+        // Draw character's name above their head, adjusting for camera angle
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(this.name, game.window.w / 2 - compareX, game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.height - (this.HB.pos.z * (1 - game.player.camera.angle)) - 10);
+
+        /*
+             _     _                _    _ _   _
+          __| |___| |__ _  _ __ _  | |_ (_) |_| |__  _____ __
+         / _` / -_) '_ \ || / _` | | ' \| |  _| '_ \/ _ \ \ /
+         \__,_\___|_.__/\_,_\__, | |_||_|_|\__|_.__/\___/_\_\
+                            |___/
+        */
+        if (game.debug) {
+            ctx.lineWidth = 2;
+            ctx.fillStyle = "#FF0000";
+            ctx.strokeStyle = "#FF0000";
+            ctx.fillRect(game.window.w / 2 - compareX - 2, game.window.h / 2 - (compareY * game.player.camera.angle) - 2, 4, 4);
+            ctx.beginPath();
+            ctx.ellipse(
+                game.window.w / 2 - compareX,
+                game.window.h / 2 - (compareY * game.player.camera.angle) - (this.HB.pos.z * (1 - game.player.camera.angle)),
+                this.HB.radius,
+                this.HB.radius * game.player.camera.angle,
+                0, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(
+                game.window.w / 2 - compareX,
+                game.window.h / 2 - (compareY * game.player.camera.angle) - (this.HB.height * (1 - game.player.camera.angle)) - (this.HB.pos.z * (1 - game.player.camera.angle)),
+                this.HB.radius,
+                this.HB.radius * game.player.camera.angle,
+                0, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#FFFFFF";
+            let newX = this.HB.pos.x + this.speed.x;
+            let newY = this.HB.pos.y + this.speed.y;
+            let newZ = this.HB.pos.z + this.speed.z;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(game.window.w / 2, game.window.h / 2);
+            compareX = game.player.camera.x - newX;
+            compareY = game.player.camera.y - newY;
+            let compareZ = newZ - this.HB.pos.z;
+            ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - (compareY * game.player.camera.angle) - (this.speed.z * (1 - game.player.camera.angle)));
+            ctx.stroke();
         }
     }
 
-    getRegion() {
-        return {
-            x: this.x,
-            y: this.y,
-            z: this.z,
-            w: this.w,
-            h: this.h,
-            d: this.d
-        }
+    /*
+
+     ##### #####  #  ####   ####  ###### #####
+       #   #    # # #    # #    # #      #    #
+       #   #    # # #      #      #####  #    #
+       #   #####  # #  ### #  ### #      #####
+       #   #   #  # #    # #    # #      #   #
+       #   #    # #  ####   ####  ###### #    #
+
+    */
+    trigger(actor, side) {
+
     }
+
 }
 
+function getName() {
+    let names = [
+        "Aegnor",
+        "Beleg",
+        "Celeborn",
+        "Denethor",
+        "Ecthelion",
+        "Jae'Sin",
+        "Loh'Gahn",
+        "Aerendil",
+        "Caladwen",
+        "Eldamar",
+        "Finwe",
+        "Galadriel",
+        "Haldir",
+        "Ithilwen",
+        "Luthien",
+        "Maedhros",
+        "Nimrodel",
+        "Orome",
+        "Oropher",
+        "Quenya",
+        "Silmaril",
+        "Tauriel",
+        "Vanyar",
+        "Yavanna",
+        "Zirakzigil"
+    ];
+    return names[Math.floor(Math.random() * names.length)];
+}
 
-/*
-      :::::::::: ::::    ::: ::::::::::   :::   :::  :::   :::
-     :+:        :+:+:   :+: :+:         :+:+: :+:+: :+:   :+:
-    +:+        :+:+:+  +:+ +:+        +:+ +:+:+ +:+ +:+ +:+
-   +#++:++#   +#+ +:+ +#+ +#++:++#   +#+  +:+  +#+  +#++:
-  +#+        +#+  +#+#+# +#+        +#+       +#+   +#+
- #+#        #+#   #+#+# #+#        #+#       #+#   #+#
-########## ###    #### ########## ###       ###   ###
-*/
-class NPC extends Character {
-    constructor(id, spawnx, spawny, options) {
-        super(id, spawnx, spawny);
-        this.team = 1;
-        this.formationRange = 50;
-        this.dformationRange = 50;
-        this.lookAhead = 50;
-        this.nameTag = '';
-        this.bot = true;
-        this.target = null;
-        this.hp = 100;
-        this.hp_max = 100;
-        // Less friction means more speed and less control
-        this.frictionMulti = Math.random() * 0.1
-        this.speedMulti = 0.65 - (this.frictionMulti * 3);
-        this.frictionMulti += 0.9;
-        this.gfx = 'img/sprites/dark1';
-        this.color = '#330099';
-        this.hud = {
-            barW: 48
-        }
-        if (typeof options === 'object')
-            for (var key of Object.keys(options)) {
-                this[key] = options[key];
-            }
-        this.leftgfx = this.gfx + '_l'; // Set this after options so you only have to set gfx
-        this.img.src = this.gfx + '.png'
-    }
+function generateRandomName() {
+    let vowels = ['a', 'e', 'i', 'o', 'u'];
+    let consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'];
 
-    /*
-              :::     :::::::::::
-           :+: :+:       :+:
-         +:+   +:+      +:+
-       +#++:++#++:     +#+
-      +#+     +#+     +#+
-     #+#     #+#     #+#
-    ###     ### ###########
-    */
-    AI() {
-        for (const c of game.match.map.blocks) {
-            if (c != this) {
-                if (!c.tags.includes('debris') && !c.tags.includes('nocollide') && Math.abs(this.x - c.x) < this.w / 2 + (c.w / 2) + this.lookAhead && Math.abs(this.y - c.y) < this.h / 2 + (c.h / 2) + this.lookAhead && this.z < c.d && c.z < this.d) {
-                    // if (this.power >= this.jumpCost) {
-                    this.zspeed += 7
-                    this.power -= this.jumpCost
-                    // }
-                }
-            }
-        }
-        if (this.target) {
-            if (this.target.type == 'goal') this.formationRange = 0;
-            if (Math.abs(this.x - this.target.x) < this.w / 2 + (this.target.w / 2) + this.formationRange && Math.abs(this.y - this.target.y) < this.h / 2 + (this.target.h / 2) + this.formationRange && this.z < this.target.d && this.target.z < this.d) {
-                this.inFormation = true;
-            } else {
-                let compareX = this.target.x - this.x;
-                let compareY = this.target.y - this.y;
+    let name = '';
+    let length = Math.floor(Math.random() * 10) + 4; // Random length between 2 and 4
 
-                let speed = this.speedMulti;
-                if (this.z > game.match.map.windH)
-                    speed *= 0.1;
-                if (compareX > 0 && this.xspeed < this.maxSpeed) {
-                    this.xspeed += speed;
-                    this.img.src = this.gfx + '.png';
-                }
-                else if (compareX <= 0 && this.xspeed > this.maxSpeed * -1) {
-                    this.xspeed -= speed;
-                    this.img.src = this.leftgfx + '.png';
-                }
-                if (compareY < 0 && this.yspeed > this.maxSpeed * -1) this.yspeed -= speed;
-                else if (compareY >= 0 && this.yspeed < this.maxSpeed) this.yspeed += speed;
-
-                let distance = Math.sqrt(compareX ** 2 + compareY ** 2);
-
-                // Switch guns when empty
-                if (this.ammo[this.inventory[this.item].type] <= 0) {
-                    this.item++;
-                    if (this.item >= this.inventory.length) this.item = 0;
-                }
-
-                // Attack
-                if (Math.abs(distance) <= this.inventory[this.item].range && this.target.team != this.team)
-                    if (ticks % 20 == 0) this.inventory[this.item].use(this, compareX, compareY, 0);
-            }
-
-            if (this.target.team !== undefined) {
-                if (this.target.team == this.team) this.formationRange = this.dformationRange;
-                else this.formationRange = 0;
-                if (this.target.lastColNPC)
-                    if (this.target.lastColNPC.team != this.team)
-                        this.target = this.target.lastColNPC;
-            }
-
-            //If my target is not active
-            if (!this.target.active) this.findTarget();
+    for (let i = 0; i < length; i++) {
+        if (i % 2 === 0) {
+            name += consonants[Math.floor(Math.random() * consonants.length)];
         } else {
-            this.findTarget();
+            name += vowels[Math.floor(Math.random() * vowels.length)];
         }
     }
 
-    findTarget() {
-        this.target = null;
-        // If the player is active, rally to them or attack them
-        if (game.player.character.active) {
-            this.target = game.player.character;
-        }
-        // Look for another NPC to attack!
-        for (const npc of game.match.npcs) {
-            if (npc.active && npc.team != this.team) this.target = npc;
-        }
-        // Look for a goal to race through?
-        if (!this.target) this.target = game.match.goals[0];
-        //Try to get back into formation
-        if (!this.target)
-            for (const npc of game.match.npcs) {
-                if (npc.active && npc.team == this.team) this.target = npc;
-            }
-        // Target itself?
-        if (!this.target) this.target = this;
-    }
-
-    /*
-          :::::::::  :::::::::      :::     :::       :::
-         :+:    :+: :+:    :+:   :+: :+:   :+:       :+:
-        +:+    +:+ +:+    +:+  +:+   +:+  +:+       +:+
-       +#+    +:+ +#++:++#:  +#++:++#++: +#+  +:+  +#+
-      +#+    +#+ +#+    +#+ +#+     +#+ +#+ +#+#+ +#+
-     #+#    #+# #+#    #+# #+#     #+#  #+#+# #+#+#
-    #########  ###    ### ###     ###   ###   ###
-    */
-    draw() {
-        let compareY = game.player.camera.y - this.y;
-        let compareX = game.player.camera.x - this.x;
-        if (game.debug) {
-            ctx.fillStyle = "#00FF00";
-            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2), this.w, this.h);
-            ctx.fillStyle = "#0000FF";
-            ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) + this.z, this.w, this.h);
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(game.window.w / 2 - compareX - 2, game.window.h / 2 - compareY - 2, 4, 4);
-        } else {
-            this.shadow.w = (this.w - this.hover) * (1 - (((this.z > this.shadow.d) ? this.shadow.d : this.z) / this.shadow.d));
-            this.shadow.h = this.shadow.w / 2;
-            ctx.globalAlpha = 0.5;
-            ctx.drawImage(this.shadowImg, game.window.w / 2 - compareX - (this.shadow.w / 2), game.window.h / 2 - compareY - (this.shadow.h / 2) + this.shadow.y, this.shadow.w, this.shadow.h);
-            ctx.globalAlpha = 1;
-            ctx.drawImage(this.img, game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY - (this.h / 2) - this.z, this.w, this.h);
-        }
-
-        // ctx.fillStyle = "#000000";
-        // ctx.fillRect((game.window.w / 2) - (this.character.w / 2) - 1, (game.window.h / 2) + (this.character.h / 2) - 1, this.hud.barW + 2, 16);
-        let healthBar = (this.hp / this.hp_max) * this.hud.barW;
-        if (healthBar >= this.hud.barW) {
-            healthBar = this.hud.barW;
-            ctx.fillStyle = "#00FF00";
-        } else if (healthBar >= this.hud.barW * (2 / 3)) {
-            ctx.fillStyle = "#FF9900";
-        } else if (healthBar >= this.hud.barW * (1 / 3)) {
-            ctx.fillStyle = "#FFFF00";
-        } else if (healthBar > 0) {
-            ctx.fillStyle = "#FF0000";
-        } else {
-            healthBar = 1;
-            ctx.fillStyle = "#FF0000";
-        }
-        ctx.fillRect(game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY + (this.h / 2) - this.z, healthBar, 4);
-        if (this.nameTag) {
-            ctx.fillStyle = "#000000";
-            ctx.font = '15px consolas';
-            ctx.fillText(this.nameTag, game.window.w / 2 - compareX - (this.w / 2), game.window.h / 2 - compareY + (this.h / 2) - this.z + 15);
-        }
-    }
-
+    return name;
 }

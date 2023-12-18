@@ -2,6 +2,7 @@
     font-family: 'BankGothic';
     src: url('fonts/BankGothic.ttf');
 }
+
 @font-face {
     font-family: 'Jura';
     src: url('../fonts/Jura-Bold.ttf');
@@ -12,6 +13,7 @@
     margin: 0px;
     overflow: hidden;
 }
+
 canvas {
     z-index: 0;
     border: 1px solid black;
