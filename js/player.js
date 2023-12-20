@@ -73,20 +73,63 @@ class Bot {
                     this.controller.buttons.moveDown.current = this.controller.buttons.moveUp.current = 0; // Reset vertical movement
                 }
             }
+
+            /*
+              __  __                             _
+             |  \/  |__ _ _ _  __ _ __ _ ___    /_\  _ __  _ __  ___
+             | |\/| / _` | ' \/ _` / _` / -_)  / _ \| '  \| '  \/ _ \
+             |_|  |_\__,_|_||_\__,_\__, \___| /_/ \_\_|_|_|_|_|_\___/
+                                   |___/
+            */
             // Switch guns when empty
-            if (this.character.ammo[this.character.inventory[this.character.item].type] <= 0) { // If the current gun is empty
+            let switchCount = 0;
+            while (this.character.ammo[this.character.inventory[this.character.item].type] <= 0) { // If the current gun is empty
+                switchCount++; // Count the number of times we've switched
                 this.character.item++; // Switch to the next gun
                 if (this.character.item >= this.character.inventory.length) this.character.item = 0; // If the next gun is out of range, switch to the first gun
+                if (switchCount >= this.character.inventory.length) {
+                    // If we are out of ammo for every gun, set this character's target to the closest Ammo_ powerup on the map
+                    let closestAmmo = null;
+                    closestAmmo = this.findClosestBlockByType(['ammo_ballistic', 'ammo_plasma']);
+                    if (closestAmmo) this.character.target = closestAmmo;
+                    else this.character.target = this.character;
+                    break; // If we've switched to every gun, stop switching) 
+                }
             }
 
-            // Attack
-            // If the target is within range, attack
-            if (Math.abs(distance) <= this.character.inventory[this.character.item].range && this.character.target.team != this.character.team)
-                this.controller.buttons.fire.current = 1;
-            else
-                this.controller.buttons.fire.current = 0;
+            // If this character's hp is below 25, set this character's target to the closest health powerup on the map
+            if (this.character.hp < 25) {
+                let closestHealth = null;
+                closestHealth = this.findClosestBlockByType(['health']);
+                if (closestHealth) this.character.target = closestHealth;
+                else this.character.target = this.character;
+            }
 
-            // 
+            /*
+                _  _   _           _
+               /_\| |_| |_ __ _ __| |__
+              / _ \  _|  _/ _` / _| / /
+             /_/ \_\__|\__\__,_\__|_\_\
+
+            */
+            if (
+                Math.abs(distance) <= this.character.inventory[this.character.item].range &&
+                this.character.target.team != this.character.team &&
+                this.character.target instanceof Character
+            ) {
+                if (this.character.target.HB.pos.z > this.character.HB.pos.z && this.character.pp > 50) {
+                    this.controller.buttons.jump.current = 1;
+                } else {
+                    this.controller.buttons.jump.current = 0;
+                }
+                this.controller.buttons.fire.current = 1;
+            }
+            else {
+                this.controller.buttons.jump.current = 0;
+                this.controller.buttons.fire.current = 0;
+            }
+
+            // // Formation stuff
             // if (this.character.target.team !== undefined) {
             //     if (this.character.target.team == this.character.team) this.character.formationRange = this.character.dformationRange;
             //     else this.character.formationRange = 0;
@@ -96,7 +139,7 @@ class Bot {
             // }
 
             //If my target is not active
-            if (!this.character.target.active) {
+            if (!this.character.target.active || this.character.target.team == this.character.team) {
                 this.findTarget();
             }
         } else {
@@ -121,6 +164,24 @@ class Bot {
             }
         // Target itself?
         if (!this.character.target) this.character.target = this.character;
+    }
+
+
+    findClosestBlockByType(type) {
+        let closestBlock = null;
+        let closestDistance = Infinity;
+        for (const block of game.match.map.blocks) {
+            if (type.includes(block.subtype) || type.includes(block.type)) {
+                let compareX = block.HB.pos.x - this.character.HB.pos.x;
+                let compareY = block.HB.pos.y - this.character.HB.pos.y;
+                let distance = Math.sqrt(compareX ** 2 + compareY ** 2); // Pythagoras
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestBlock = block;
+                }
+            }
+        }
+        return closestBlock;
     }
 
 }

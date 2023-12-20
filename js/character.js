@@ -61,6 +61,7 @@ class Character {
         this.accuracy = 0.1;    // Spread magnitude of weapon
         this.pp = 100;          // Power Points
         this.pp_max = 100;      // Max Power Points
+        this.invulnerable = false;  // Can't take damage
 
         /*
           ___ _
@@ -70,7 +71,7 @@ class Character {
 
         */
         this.item = 0;
-        this.inventory = [new Pistol(), new Flamer(), new JumpDropper()];
+        this.inventory = [new Pistol(), new Rifle()];
         this.ammo = {
             plasma: 2,
             plasmaMax: 5,
@@ -89,10 +90,10 @@ class Character {
         this.gfx = 'img/sprites/lilguy';
         this.color = [255, 0, 0];
         this.faceCamera = true;
-        this.shadow = {
-            img: new Image()
-        }
-        this.shadow.img.src = 'img/sprites/shadow.png';
+        this.shadow = new Image();
+        this.shadow.src = 'img/sprites/shadow.png';
+        this.shadowDraw = true;
+        this.deathSFX = new Audio('sfx/hit05.wav');
 
         /*
             ___       _   _
@@ -122,7 +123,8 @@ class Character {
 
     step(controller) {
         if (this.active) {
-            this.pp += 1;
+            if (this.pp < this.pp_max)
+                this.pp += 1;
             this.floor = 0;
 
             //Reset Momentum
@@ -437,6 +439,7 @@ class Character {
 
             if (this.hp <= 0) {
                 this.active = false;
+                this.deathSFX.play();
                 if (this === game.player.character) {
                     game.paused = true;
                     // game.player.findTarget();
@@ -496,7 +499,7 @@ class Character {
                 ctx.globalAlpha = 0.4;
                 let shadowShrink = this.HB.radius * Math.min(((this.HB.pos.z - this.floor) / 128), 1)
                 ctx.drawImage(
-                    this.shadow.img,
+                    this.shadow,
                     game.window.w / 2 - compareX - this.HB.radius + shadowShrink,
                     game.window.h / 2 - compareY - this.HB.radius + shadowShrink - this.floor,
                     this.HB.radius * 2 - shadowShrink * 2,
@@ -522,6 +525,12 @@ class Character {
                     0, 0, 2 * Math.PI);
                 ctx.stroke();
 
+                /*
+                  _  _          _ _   _      ___
+                 | || |___ __ _| | |_| |_   | _ ) __ _ _ _
+                 | __ / -_) _` | |  _| ' \  | _ \/ _` | '_|
+                 |_||_\___\__,_|_|\__|_||_| |___/\__,_|_|
+                */
                 // draw an arc around the bottom half of the selector ring offest by 10 pixels outside that represents the character's health
                 // draw bar background
                 ctx.strokeStyle = "#000000";
@@ -531,11 +540,12 @@ class Character {
                 ctx.arc(
                     game.window.w / 2 - compareX,
                     game.window.h / 2 - compareY - this.floor,
-                    this.HB.radius + 10,
-                    Math.PI,
-                    Math.PI * 2,
+                    this.HB.radius + 16,
+                    Math.PI * 0.75,
+                    Math.PI * 0.25,
                     true
                 );
+                // draw bar
                 ctx.stroke();
                 ctx.strokeStyle = this.unitColor(true);
                 ctx.lineWidth = 3;
@@ -543,12 +553,48 @@ class Character {
                 ctx.arc(
                     game.window.w / 2 - compareX,
                     game.window.h / 2 - compareY - this.floor,
-                    this.HB.radius + 10,
-                    Math.PI,
-                    Math.PI * (1 - (this.hp / this.hp_max)),
+                    this.HB.radius + 16,
+                    Math.PI * 0.75,
+                    Math.PI * (0.75 - ((this.hp / this.hp_max) * 0.5)),
                     true
                 );
                 ctx.stroke();
+
+                /*
+                  ___                      ___
+                 | _ \_____ __ _____ _ _  | _ ) __ _ _ _
+                 |  _/ _ \ V  V / -_) '_| | _ \/ _` | '_|
+                 |_| \___/\_/\_/\___|_|   |___/\__,_|_|
+                */
+                //draw an arc around the bottom quarter of the selector ring that displays the character's power
+                //draw bar background
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(
+                    game.window.w / 2 - compareX,
+                    game.window.h / 2 - compareY - this.floor,
+                    this.HB.radius + 8,
+                    Math.PI * 0.75,
+                    Math.PI * 0.25,
+                    true
+                );
+                ctx.stroke();
+                // draw bar
+                ctx.beginPath();
+                ctx.strokeStyle = "#00FFFF";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    game.window.w / 2 - compareX,
+                    game.window.h / 2 - compareY - this.floor,
+                    this.HB.radius + 8,
+                    Math.PI * 0.75,
+                    Math.PI * (0.75 - ((this.pp / this.pp_max) * 0.5)),
+                    true
+                );
+                ctx.stroke();
+
 
                 /*
                      _                     _
@@ -586,21 +632,24 @@ class Character {
                     ctx.stroke();
                     let newX = this.HB.pos.x + this.speed.x;
                     let newY = this.HB.pos.y + this.speed.y;
-                    ctx.strokeStyle = "#FFFFFF"
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(game.window.w / 2, game.window.h / 2);
-                    compareX = game.player.camera.x - newX;
-                    compareY = game.player.camera.y - newY;
-                    ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
-                    ctx.stroke();
                 }
-                // Draw character's name above their head
-                ctx.fillStyle = "#FFFFFF";
-                ctx.font = "12px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText(this.name, game.window.w / 2 - compareX, game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z - 10);
 
+                /*
+                  _  _
+                 | \| |__ _ _ __  ___
+                 | .` / _` | '  \/ -_)
+                 |_|\_\__,_|_|_|_\___|
+                */
+                // Draw character's name above their head
+                ctx.textAlign = "center";
+                //first draw the text in black to create a shadow
+                ctx.fillStyle = '#000000';
+                ctx.font = "12px Jura";
+                ctx.fillText(this.name, game.window.w / 2 - compareX + 2, game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z - 8);
+                //then draw the text in white
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = "12px Jura";
+                ctx.fillText(this.name, game.window.w / 2 - compareX, game.window.h / 2 - compareY - this.HB.height - this.HB.pos.z - 10);
             }
 
             /*
@@ -613,23 +662,26 @@ class Character {
             // This can draw a line to the closest part of a rectangle
             // except it broke at some point when i moved to utils
             // It can still draw to the XY which is good for tubes, but not blocks
-            // if (this.target) {
-            //     ctx.strokeStyle = "#FF0000"
-            //     ctx.lineWidth = 2;
-            //     ctx.beginPath();
-            //     ctx.moveTo(game.window.w / 2, game.window.h / 2);
-            //     compareX = game.player.camera.x - this.target.HB.pos.x; //If you change this to the target.pos
-            //     compareY = game.player.camera.y - this.target.HB.pos.y; //If you change this to the target.pos
-            //     ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
-            //     ctx.stroke();
-            // }
+            if (this.target && game.debug) {
+                compareX = game.player.camera.x - this.HB.pos.x; //If you change this to the target.pos
+                compareY = game.player.camera.y - this.HB.pos.y; //If you change this to the target.pos
+                let targetX = game.player.camera.x - this.target.HB.pos.x;
+                let targetY = game.player.camera.y - this.target.HB.pos.y;
+                ctx.strokeStyle = "#FFFFFF"
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(game.window.w / 2 - targetX, game.window.h / 2 - targetY);
+                ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
+                ctx.stroke();
+            }
         } else {
-            // draw number of waves to center of screen
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "12px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(`Waves: ${game.match.waves}`, game.window.w / 2, game.window.h / 2);
-
+            if (this === game.player.character) {
+                // draw number of waves to center of screen
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "36px Jura";
+                ctx.textAlign = "center";
+                ctx.fillText(`Waves: ${game.match.waves}`, game.window.w / 2, game.window.h / 2);
+            }
         }
     }
 
@@ -658,7 +710,7 @@ class Character {
         ctx.globalAlpha = 0.4;
         let shadowShrink = this.HB.radius * Math.min(((this.HB.pos.z - this.floor) / 128), 1)
         ctx.drawImage(
-            this.shadow.img,
+            this.shadow,
             game.window.w / 2 - compareX - this.HB.radius + shadowShrink,
             game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.radius + (this.HB.height * (1 - game.player.camera.angle)) + (shadowShrink * game.player.camera.angle) - (this.floor * (1 - game.player.camera.angle)),
             (this.HB.radius * 2) - (shadowShrink * 2),
@@ -730,7 +782,7 @@ class Character {
 
         // Draw character's name above their head, adjusting for camera angle
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "12px Arial";
+        ctx.font = "12px Jura";
         ctx.textAlign = "center";
         ctx.fillText(this.name, game.window.w / 2 - compareX, game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.height - (this.HB.pos.z * (1 - game.player.camera.angle)) - 10);
 
@@ -796,18 +848,28 @@ class Character {
 
 function getName() {
     let names = [
+        "Hae'din",
+        "Ai'Zaya",
+        "Mah'Vrick",
+        "Jae'Sin",
+        "Loh'Gahn",
+        "Ah'Lex",
+        "Bek'Hahm",
+        "Ry'Ahn",
+        "Oh'Lee",
+        "Zer'Gling",
+        "Bah'Tadog",
+        "Lee'Roy",
+        "Baelzar",
         "Aegnor",
         "Beleg",
         "Celeborn",
         "Denethor",
         "Ecthelion",
-        "Jae'Sin",
-        "Loh'Gahn",
         "Aerendil",
         "Caladwen",
         "Eldamar",
         "Finwe",
-        "Galadriel",
         "Haldir",
         "Ithilwen",
         "Luthien",
@@ -817,7 +879,6 @@ function getName() {
         "Oropher",
         "Quenya",
         "Silmaril",
-        "Tauriel",
         "Vanyar",
         "Yavanna",
         "Zirakzigil"

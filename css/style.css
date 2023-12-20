@@ -25,6 +25,7 @@ body {
 }
 
 #debugger {
+    display: none;
     z-index: 1;
     position: fixed;
     bottom: 0px;

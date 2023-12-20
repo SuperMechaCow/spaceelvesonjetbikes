@@ -27,26 +27,27 @@ Dark elves believe everything is random:
 #########   ########          ###        ########### ###    ###  ########     ###
 -->
 
-- Debris from missile
-- missile collision with blocks
-- missile collsion particles
-- Only draw in camera
-- Complete speed physics (top speed, actual speed, weight)
+- Randomly generate tilemap
+- Draw Tilemaps
+- target on minimap
+- Collision rays (fast objects go through colliders)
+- Sound distances
+- Waves and Wind
+- A* pathing
+- Gamepad and touch screen buttons
+- Keyboard, Mouse, Touch, Gamepad classes
+- ?? Only draw in camera
 - Shoot along z rotation in iso view
-- Give blocks friction for wall jumping rooftop drag
-- Fix Gamepad
-- Keyboard, Mouse, Touch, Gampead classes
-- Fix Touch radius and add buttons
-- Waves
+- Bots always shoot at z axis in every view (no hiding on top of blocks)
 - Bot chasing / targets / paths
 - Racing
-- A* pathing
+- Complete speed physics (top speed, actual speed, weight)
 - Graphics are block attached to character
+- Give blocks friction for wall jumping rooftop drag
 -- Are shadows blocks, too?
 - Animators
 - Emitters
 - Melee Weapons
-- Tilemaps
 - Polyblock regions
 - 3D Polyblocks
 - Camera Zoom/Pan/Shake
@@ -70,3 +71,10 @@ Dark elves believe everything is random:
 - ring height too low in iso view when on block
 - missile cylinder shadow not aligning in iso view
 - choppy gamepad aim
+
+
+// weapons
+- ballistic beats crystal beats plasma beats ballistic
+- pistol and sniper beat sheild and grapple by outranging
+- flamer and lance beat pistol and sniper by closing distance and burst damage
+- shield and grapple beat flamer and lance by disabling when grappled and reflecting momentum
