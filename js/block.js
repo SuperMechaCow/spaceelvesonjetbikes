@@ -71,7 +71,8 @@ class Block {
             this.HB.pos.x += this.speed.x;
             this.HB.pos.y += this.speed.y;
             this.HB.pos.z += this.speed.z;
-            this.livetime--;
+            if (this.dying)
+                this.livetime--;
             for (const func of this.runFunc) {
                 func();
             }
@@ -733,33 +734,73 @@ class HealthPickup extends PowerUp {
     }
 }
 
-class Buff extends Block {
-    constructor(id, x, y, z, vx, vy, vz, options) {
+
+class WeaponPickup extends PowerUp {
+    constructor(id, x, y, z, vx, vy, vz, options = {}) {
         super(id, x, y, z, vx, vy, vz, options);
-        this.HB = new Cube(new Vect3(x, y, z), new Vect3(vx, vy, vz));
-        this.target = null;
-        this.rotateRadius = 50
-        this.type = 'buff';
-        this.solid = false;
+        this.type = 'weapon';
+        this.weapon = 'pistol'
+        this.item = new Pistol();
+        this.ammoMax = 10;
         this.shadowDraw = true;
-        this.runFunc = [
-            (actor, side) => {
-                if (this.target != null) {
-                    this.HB.pos.x = this.target.HB.pos.x + sineAnimate(this.rotateRadius, 0.05) - this.HB.volume.x / 2;
-                    this.HB.pos.y = this.target.HB.pos.y + sineAnimate(this.rotateRadius, 0.05, 30);
-                    this.HB.pos.z = this.target.HB.pos.z;
+        this.pickupDelay = ticks + 180;
+        this.runFunc = [(actor, side) => {
+            if (this.pickupDelay < ticks) {
+                if (actor instanceof Character) {
+                    if (actor.inventory.length < 2) {
+                        this.touchSFX.play();
+                        actor.inventory.push(this.item); // Add to inventory
+                    }
+                    else {
+                        this.active = true; // Turn this back on if the player is full inventory
+                    }
                 }
             }
-        ]
+            else {
+                this.active = true; // Turn this back on if the player is full inventory
+            }
+            this.speed.z -= game.match.map.gravity;
+            if (this.HB.pos.z < 0) {
+                this.HB.pos.z = 0;
+                this.speed.z = 0;
+                this.speed.x *= game.match.map.friction.ground;
+                this.speed.y *= game.match.map.friction.ground;
+            }
+        }];
+
         if (typeof options === 'object')
             for (var key of Object.keys(options)) {
                 this[key] = options[key];
             }
+
+        if (this.weapon == 'pistol') {
+            this.item = new Pistol();
+            if (this.ammo == undefined) this.ammo = 10;
+            this.ammoMax = 10;
+            this.item.ammo = this.ammo;
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/pistol_inactive.png';
+            else this.imgFile = 'img/icons/inventory/pistol_active.png';
+            this.imgFileSide = 'img/sprites/powerups/ammo_ballistic_side.png';
+        }
+        if (this.weapon == 'rifle') {
+            this.item = new Rifle();
+            if (this.ammo == undefined) this.ammo = 3;
+            this.ammoMax = 3;
+            this.item.ammo = this.ammo;
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/rifle_inactive.png';
+            else this.imgFile = 'img/icons/inventory/rifle_active.png';
+            this.imgFileSide = 'img/sprites/powerups/ammo_ballistic_side.png';
+        }
+        if (this.weapon == 'flamer') {
+            this.item = new Flamer();
+            if (this.ammo == undefined) this.ammo = 5;
+            this.ammoMax = 5;
+            this.item.ammo = this.ammo;
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/flamer_inactive.png';
+            else this.imgFile = 'img/icons/inventory/flamer_active.png';
+            this.imgFileSide = 'img/sprites/powerups/ammo_plasma_side.png';
+        }
         this.img.src = this.imgFile;
-
-    }
-
-    trigger(actor, side) {
-
+        this.imgSide.src = this.imgFileSide;
     }
 }

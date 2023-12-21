@@ -32,6 +32,8 @@ class Pistol extends Item {
     constructor(options) {
         super(options);
         this.type = 'ballistic';
+        this.name = 'Pluton Pistol';
+        this.weapon = 'pistol';        
         this.shootSFX = new Audio('sfx/laser_01.wav');
         this.reloadReadySFX = new Audio('sfx/pickup01.wav');
         this.projectileSpeed = 20;
@@ -51,6 +53,7 @@ class Pistol extends Item {
                 this[key] = options[key];
             }
     }
+    
     use(user, aimX, aimY, aimZ, mode) {
         // Check cooldown
         if (ticks > this.nextCool) {
@@ -92,10 +95,10 @@ class Pistol extends Item {
                     )
                 );
             } else {
-                if (user.ammo.ballistic > 0) {
+                if (user.ammo[this.type] > 0) {
                     this.ammo = this.ammoMax;   // reload
                     this.nextCool = ticks + this.reloadTime; // set reload time
-                    user.ammo.ballistic--;      // consume a clip from a user
+                    user.ammo[this.type]--;      // consume a clip from a user
                 } else {
                     //play empty click sound
                 }
@@ -116,33 +119,36 @@ class Pistol extends Item {
 class Rifle extends Item {
     constructor(options) {
         super(options);
-        this.type = 'plasma';
+        this.type = 'ballistic';
+        this.name = 'Mercury Rifle';
+        this.weapon = 'rifle';
         this.shootSFX = new Audio('sfx/rifle_shoot.wav');
         this.projectileSpeed = 30;
         this.damage = 40;
-        this.range = 500;
-        this.coolDown = 30;
+        this.range = 600;
+        this.coolDown = 40;
         this.reloadTime = 180;
         this.nextCool = 0;
         this.ammo = 3;
         this.ammoMax = 3;
         this.icon = new Image();
-        this.icon.src = 'img/icons/inventory/rifle_active_p.png';
+        this.icon.src = 'img/icons/inventory/rifle_active.png';
         this.iconInactive = new Image();
-        this.iconInactive.src = 'img/icons/inventory/rifle_inactive_p.png';
+        this.iconInactive.src = 'img/icons/inventory/rifle_inactive.png';
         // Options
         if (typeof options === 'object')
             for (var key of Object.keys(options)) {
                 this[key] = options[key];
             }
     }
+
     use(user, aimX, aimY, aimZ, mode) {
         // Check cooldown
         if (ticks > this.nextCool) {
-            // Set next cooldown
-            this.nextCool = ticks + this.coolDown;
             // Check ammo
             if (this.ammo > 0) {
+                // Set next cooldown
+                this.nextCool = ticks + this.coolDown;
                 let xaim = aimX;
                 let yaim = aimY;
                 let zaim = aimZ;
@@ -198,7 +204,6 @@ class Rifle extends Item {
                 );
 
                 // Push player back by the negative of the aim vector
-                console.log(aimX, aimY, aimZ, xaim, yaim, zaim);
                 user.speed.x -= (aimX / distance) * 10;
                 user.speed.y -= (aimY / distance) * 10;
                 user.speed.z -= (aimZ / distance) * 10;
@@ -229,6 +234,8 @@ class Flamer extends Item {
     constructor(options) {
         super(options);
         this.type = 'plasma';
+        this.name = 'Venusian Lotus';
+        this.weapon = 'flamer';
         this.shootSFX = new Audio('sfx/hit_02.wav');
         this.projectileSpeed = 10;
         this.range = 200;
@@ -252,12 +259,17 @@ class Flamer extends Item {
         if (ticks > this.nextCool) {
             user.parent.controller.buttons.fire.last = 0;
             // Set next cooldown
-            this.nextCool = ticks + this.coolDown;
             // Check ammo
             if (this.ammo > 0) {
+                this.nextCool = ticks + this.coolDown;
                 this.ammo--; // consume a bullet
                 this.shootSFX.play(); // play shoot sound
                 for (let i = 0; i < 5; i++) {
+
+                    // There's a serious bug here.
+                    // The first missile always shoots in the direction of the cursor
+                    // The rest will spread out weirdly
+
                     let distance = Math.sqrt(aimX ** 2 + aimY ** 2);
                     aimX = (aimX / distance) * (this.projectileSpeed + user.speed.x);
                     aimY = (aimY / distance) * (this.projectileSpeed + user.speed.y);
@@ -275,7 +287,7 @@ class Flamer extends Item {
                             allID++, // ID
                             user.HB.pos.x, user.HB.pos.y, user.HB.pos.z, 4, 4, 0, user, // Position and size
                             {
-                                livetime: 14,
+                                livetime: 16,
                                 speed: new Vect3(aimX, aimY, 0),
                                 color: user.color,
                                 damage: 10
@@ -284,10 +296,10 @@ class Flamer extends Item {
                     );
                 }
             } else {
-                if (user.ammo.plasma > 0) {
+                if (user.ammo[this.type] > 0) {
                     this.ammo = this.ammoMax;   // reload
                     this.nextCool = ticks + this.reloadTime; // set reload time
-                    user.ammo.plasma--;      // consume a clip from a user
+                    user.ammo[this.type]--;      // consume a clip from a user
                 } else {
                     //play empty click sound
                 }

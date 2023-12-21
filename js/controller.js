@@ -18,8 +18,9 @@ function setupInputs() {
             event.preventDefault();
             game.player.controller.altKey = Number(event.altKey)
         }
-        if (event.key.toLocaleLowerCase() === "q") game.player.character.item = 0;
-        if (event.key.toLocaleLowerCase() === "e") game.player.character.item = 1;
+        if (event.key.toLocaleLowerCase() === "q") game.player.controller.inventory1Key = 1;
+        if (event.key.toLocaleLowerCase() === "e") game.player.controller.inventory2Key = 1;
+        if (event.key.toLocaleLowerCase() === "f") game.player.controller.throwKey = 1;
         // if (event.key.toLocaleLowerCase() === "3") game.player.character.item = 2;
         // if (event.key.toLocaleLowerCase() === "4") game.player.character.item = 3;
         if (event.key.toLocaleLowerCase() === "w" || event.key === "ArrowUp") game.player.controller.upKey = 1;
@@ -32,6 +33,9 @@ function setupInputs() {
     document.addEventListener("keyup", function (event) {
         game.player.controller.shiftKey = Number(event.shiftKey)
         game.player.controller.altKey = Number(event.altKey)
+        if (event.key.toLocaleLowerCase() === "q") game.player.controller.inventory1Key = 0;
+        if (event.key.toLocaleLowerCase() === "e") game.player.controller.inventory2Key = 0;
+        if (event.key.toLocaleLowerCase() === "f") game.player.controller.throwKey = 0;
         if (event.key.toLocaleLowerCase() === "w" || event.key === "ArrowUp") game.player.controller.upKey = 0;
         if (event.key.toLocaleLowerCase() === "a" || event.key === "ArrowLeft") game.player.controller.leftKey = 0;
         if (event.key.toLocaleLowerCase() === "s" || event.key === "ArrowDown") game.player.controller.downKey = 0;
@@ -147,7 +151,10 @@ class Controller {
             weaponPrevious: { current: 0, last: 0 },
             weaponNext: { current: 0, last: 0 },
             start: { current: 0, last: 0 },
-            select: { current: 0, last: 0 }
+            select: { current: 0, last: 0 },
+            inventory1: { current: 0, last: 0 },
+            inventory2: { current: 0, last: 0 },
+            throw: { current: 0, last: 0 }
         }
 
         this.gamePad;
@@ -218,9 +225,14 @@ class Controller {
             else this.buttons.boost.current = 0;
 
             // A button to switch to weapon 0
-            if (gp.buttons[0].pressed) game.player.character.item = 0;
+            if (gp.buttons[0].pressed) this.buttons.inventory1.current = 1;
+            else this.buttons.inventory1.current = 0;
             // X button to switch to weapon 1
-            if (gp.buttons[2].pressed) game.player.character.item = 1;
+            if (gp.buttons[2].pressed) this.buttons.inventory2.current = 1;
+            else this.buttons.inventory2.current = 0;
+            // B button to throw
+            if (gp.buttons[1].pressed) this.buttons.throw.current = 1;
+            else this.buttons.throw.current = 0;
 
             // Left trigger to space
             if (gp.buttons[6].pressed) this.buttons.jump.current = 1;
@@ -252,9 +264,6 @@ class Controller {
                 game.player.camera._3D = false;
                 game.player.camera.angle = 1;
             }
-            
-
-
         }
         /*
           _____            _
@@ -348,6 +357,7 @@ class Controller {
                        |__/
             */
             else {
+                // Because buttons can get cleared at other points, we need to check for them here at the same time as other inputs
                 if (this.rightKey) this.buttons.moveRight.current = 1;
                 else this.buttons.moveRight.current = 0;
                 if (this.leftKey) this.buttons.moveLeft.current = 1;
@@ -366,6 +376,12 @@ class Controller {
                 else this.buttons.fire.current = 0;
                 if (this.rclickButton) this.buttons.altfire.current = 1;
                 else this.buttons.altfire.current = 0;
+                if (this.inventory1Key) this.buttons.inventory1.current = 1;
+                else this.buttons.inventory1.current = 0;
+                if (this.inventory2Key) this.buttons.inventory2.current = 1;
+                else this.buttons.inventory2.current = 0;
+                if (this.throwKey) this.buttons.throw.current = 1;
+                else this.buttons.throw.current = 0;
                 if (this.wheelUp) {
                     this.buttons.weaponPrevious.current = this.wheelUp;
                     this.wheelUp = 0;

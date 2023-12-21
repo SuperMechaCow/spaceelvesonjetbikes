@@ -92,40 +92,62 @@ class Interface {
             ctx.textAlign = "left";
 
             // draw the cooldown bar
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(ammoBox.x, ammoBox.y, 10, 100);
-            ctx.fillStyle = "#0000FF";
-            ctx.fillRect(ammoBox.x, ammoBox.y + 100 - (Math.min(Math.max(item.nextCool - ticks, 0) / item.coolDown, 1) * 100), 10, (Math.min(Math.max(item.nextCool - ticks, 0) / item.coolDown, 1) * 100));
-
-            // draw the ammo bar
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(ammoBox.x + 20, ammoBox.y, 10, 100);
-            // if the ammo is ballistic, draw it red, otherwise, draw it purple
-            if (item.type == "ballistic") ctx.fillStyle = "#FF0000";
-            else ctx.fillStyle = "#FF00FF";
-            ctx.fillRect(ammoBox.x + 20, ammoBox.y + 100 - (item.ammo / item.ammoMax) * 100, 10, (item.ammo / item.ammoMax) * 100);
-
-
-            // draw the player's ballistic ammo pips
-            ctx.fillStyle = "#000000";
-            ctx.font = '12px Jura';
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(ammoBox.x + 270, ammoBox.y, 10, 100);
-            ctx.fillStyle = "#FF0000";
-            // for each pip, draw a rectangle
-            for (let i = this.player.character.ammo.ballistic - 1; i >= 0; i--) {
-                ctx.fillRect(ammoBox.x + 271, ammoBox.y + 101 - ((i + 1) * 100 / this.player.character.ammo.plasmaMax), 8, (100 / this.player.character.ammo.plasmaMax) - 2);
+            // if the item exists, draw the cooldown and ammo bars
+            if (item) {
+                // draw background   
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(ammoBox.x, ammoBox.y, 10, 100);
+                // draw filled portion of bar
+                ctx.fillStyle = "#0000FF";
+                ctx.fillRect(
+                    ammoBox.x, // left of bar
+                    ammoBox.y + 100 // bottom of bar
+                    - (Math.min( // the smaller value of
+                        Math.max(item.nextCool - ticks, 0) / item.coolDown, // 0 to 1 of cooldown
+                        1) // or 1 (if cooldown is greater than 1)
+                        * 100), // times the size of the full bar
+                    10, // width of bar
+                    (Math.min(  // bar is the same height as the distance from top, conviently
+                        Math.max(item.nextCool - ticks, 0) / item.coolDown,
+                        1)
+                        * 100) // times the size of the full bar
+                );
+                // draw the ammo bar
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(ammoBox.x + 20, ammoBox.y, 10, 100);
+                // if the ammo is ballistic, draw it red, otherwise, draw it purple
+                if (item.type == "ballistic") ctx.fillStyle = "#FF0000";
+                else ctx.fillStyle = "#FF00FF";
+                ctx.fillRect(ammoBox.x + 20, ammoBox.y + 100 - (item.ammo / item.ammoMax) * 100, 10, (item.ammo / item.ammoMax) * 100);
             }
 
-            // draw the player's plasma ammo pips
-            ctx.fillStyle = "#000000";
-            ctx.font = '12px Jura';
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(ammoBox.x + 290, ammoBox.y, 10, 100);
-            ctx.fillStyle = "#FF00FF";
-            // for each pip, draw a rectangle
-            for (let i = this.player.character.ammo.plasma - 1; i >= 0; i--) {
-                ctx.fillRect(ammoBox.x + 291, ammoBox.y + 101 - ((i + 1) * 100 / this.player.character.ammo.plasmaMax), 8, (100 / this.player.character.ammo.plasmaMax) - 2);
+
+            // if the player has ballistic ammo
+            if (this.player.character.ammo.ballistic > 0) {
+                // draw the player's ballistic ammo pips
+                ctx.fillStyle = "#000000";
+                ctx.font = '12px Jura';
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(ammoBox.x + 270, ammoBox.y, 10, 100);
+                ctx.fillStyle = "#FF0000";
+                // for each pip, draw a rectangle
+                for (let i = this.player.character.ammo.ballistic - 1; i >= 0; i--) {
+                    ctx.fillRect(ammoBox.x + 271, ammoBox.y + 101 - ((i + 1) * 100 / this.player.character.ammo.plasmaMax), 8, (100 / this.player.character.ammo.plasmaMax) - 2);
+                }
+            }
+
+            // if the player has plasma ammo
+            if (this.player.character.ammo.plasma > 0) {
+                // draw the player's plasma ammo pips
+                ctx.fillStyle = "#000000";
+                ctx.font = '12px Jura';
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(ammoBox.x + 290, ammoBox.y, 10, 100);
+                ctx.fillStyle = "#FF00FF";
+                // for each pip, draw a rectangle
+                for (let i = this.player.character.ammo.plasma - 1; i >= 0; i--) {
+                    ctx.fillRect(ammoBox.x + 291, ammoBox.y + 101 - ((i + 1) * 100 / this.player.character.ammo.plasmaMax), 8, (100 / this.player.character.ammo.plasmaMax) - 2);
+                }
             }
 
             /*
@@ -135,21 +157,21 @@ class Interface {
              |_|_||_\_/\___|_||_\__\___/_|  \_, |
                                             |__/
             */
-            ctx.drawImage(this.player.character.inventory[0].iconInactive, (game.window.w / 2) - 150, game.window.h - 64, 64, 64);
-            ctx.drawImage(this.player.character.inventory[1].iconInactive, (game.window.w / 2) + 88, game.window.h - 64, 64, 64);
-            // this switch statement is for drawing the active item
-            switch (this.player.character.item) {
-                case 0:
-                    ctx.drawImage(this.player.character.inventory[0].icon, (game.window.w / 2) - 150, game.window.h - 64, 64, 64);
-                    break;
-                case 1:
-                    ctx.drawImage(this.player.character.inventory[1].icon, (game.window.w / 2) + 88, game.window.h - 64, 64, 64);
-                    break;
+            //if one item, it is active
+            if (this.player.character.inventory.length == 1) ctx.drawImage(this.player.character.inventory[0].icon, (game.window.w / 2) - 150, game.window.h - 64, 64, 64);
+            else if (this.player.character.inventory.length == 2) {
+                // if you have two, draw both
+                switch (this.player.character.item) {
+                    case 0:
+                        ctx.drawImage(this.player.character.inventory[0].icon, (game.window.w / 2) - 150, game.window.h - 64, 64, 64);
+                        ctx.drawImage(this.player.character.inventory[1].iconInactive, (game.window.w / 2) + 88, game.window.h - 64, 64, 64);
+                        break;
+                    case 1:
+                        ctx.drawImage(this.player.character.inventory[0].iconInactive, (game.window.w / 2) - 150, game.window.h - 64, 64, 64)
+                        ctx.drawImage(this.player.character.inventory[1].icon, (game.window.w / 2) + 88, game.window.h - 64, 64, 64);
+                        break;
+                }
             }
-            // Create a Rect for each item in the inventory and store it in the touchButton object
-            this.touchButton.inventory1 = new Rect((game.window.w / 2) - 150, game.window.h - 64, 64, 64);
-            this.touchButton.inventory2 = new Rect((game.window.w / 2) + 88, game.window.h - 64, 64, 64);
-            // this.touchButton.inventory3 = new Rect((game.window.w / 2) - 32, game.window.h - 192, 64, 64);
         }
     }
 
@@ -358,7 +380,7 @@ class Interface {
         // draw a vertical bar in the center of the z position circle
         // that represents the player's z position to a max of 200
         ctx.fillStyle = "#999900";
-        ctx.fillRect(game.window.w / 2 - 69, game.window.h, 10, -Math.min((this.player.character.HB.pos.z / 200) * 40, 40));
+        ctx.fillRect(game.window.w / 2 - 69, game.window.h - 5, 10, -Math.min((this.player.character.HB.pos.z / 600) * 30, 30));
         // first draw the text in black to create a black outline
         ctx.fillStyle = "#000000";
         ctx.font = '16px Jura';
@@ -369,7 +391,7 @@ class Interface {
         // calculate the player's total speed
         let speed = Math.sqrt(this.player.character.speed.x ** 2 + this.player.character.speed.y ** 2 + this.player.character.speed.z ** 2);
         ctx.fillStyle = "#990099";
-        ctx.fillRect(game.window.w / 2 + 59, game.window.h, 10, -Math.min((speed / 50) * 40, 40));
+        ctx.fillRect(game.window.w / 2 + 59, game.window.h - 5, 10, -Math.min((speed / 50) * 30, 30));
         ctx.fillStyle = "#FFFFFF";
         ctx.fillText(Math.round(speed), game.window.w / 2 + 64, game.window.h - 15);
         // draw white outline around edge of black circles

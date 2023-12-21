@@ -31,7 +31,7 @@ class Bot {
             // Calculate distance to target
             let compareX = this.character.target.HB.pos.x - this.character.HB.pos.x;
             let compareY = this.character.target.HB.pos.y - this.character.HB.pos.y;
-
+            
             let distance = Math.sqrt(compareX ** 2 + compareY ** 2); // Pythagoras
 
             if (distance > this.character.HB.radius * 2) { // If the target is too far away, move towards it
@@ -149,21 +149,31 @@ class Bot {
 
     findTarget() {
         this.character.target = null;
-        // If the player is active, rally to them or attack them
-        if (game.player.character.active) {
-            this.character.target = game.player.character;
+
+        let closestPlayer = null;
+        let closestDistance = Infinity;
+        for (const npc of [game.player, ...game.match.bots]) {
+            // Look for closest NPC or Player to attack
+            if (npc.character.active && npc.character.team != this.character.team) {
+                let compareX = npc.character.HB.pos.x - this.character.HB.pos.x;
+                let compareY = npc.character.HB.pos.y - this.character.HB.pos.y;
+                let distance = Math.sqrt(compareX ** 2 + compareY ** 2); // Pythagoras
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestPlayer = npc.character;
+                }
+            }
         }
-        // Look for another NPC to attack!
-        for (const npc of game.match.bots) {
-            if (npc.character.active && npc.character.team != this.character.team) this.character.target = npc.character;
-        }
+
+        this.character.target = closestPlayer;
+
         //Try to get back into formation
-        if (!this.character.target)
-            for (const npc of game.match.bots) {
-                if (npc.character.active && npc.character.team == this.team) this.character.target = npc.character;
+        if (this.character.target === null)
+            for (const npc of [game.player, ...game.match.bots]) {
+                if (npc.character.active && npc.character.team == this.character.team && npc != this) this.character.target = npc.character;
             }
         // Target itself?
-        if (!this.character.target) this.character.target = this.character;
+        if (this.character.target === null) this.character.target = this.character;
     }
 
 

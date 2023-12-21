@@ -71,11 +71,11 @@ class Character {
 
         */
         this.item = 0;
-        this.inventory = [new Pistol(), new Rifle()];
+        this.inventory = [new Pistol()];
         this.ammo = {
-            plasma: 2,
+            plasma: 1,
             plasmaMax: 5,
-            ballistic: 2,
+            ballistic: 3,
             ballisticMax: 5
         }
 
@@ -166,19 +166,58 @@ class Character {
                                          |___/
             */
             if (controller.buttons.fire.current != controller.buttons.fire.last) {
-                if (controller.buttons.fire.current) {
-                    const xMulti = (game.player.camera._3D) ? game.player.camera.angle : 1;
-                    let aimX = this.parent.controller.aimX * xMulti;
-                    let aimY = this.parent.controller.aimY;
-                    let aimZ = 0;
-                    if (game.player.camera._3D) {
-                        aimZ = aimY * game.player.camera.angle;
-                        aimY = aimY * (1 - game.player.camera.angle);
+                if (this.inventory.length) {
+                    if (controller.buttons.fire.current) {
+                        const xMulti = (game.player.camera._3D) ? game.player.camera.angle : 1;
+                        let aimX = this.parent.controller.aimX * xMulti;
+                        let aimY = this.parent.controller.aimY;
+                        let aimZ = 0;
+                        if (game.player.camera._3D) {
+                            aimZ = aimY * game.player.camera.angle;
+                            aimY = aimY * (1 - game.player.camera.angle);
+                        }
+                        this.inventory[this.item].use(this, aimX, aimY, aimZ, 0, { color: this.color });
                     }
-                    this.inventory[this.item].use(this, aimX, aimY, aimZ, 0, { color: this.color });
                 }
             }
 
+            /*
+              ___                 _                  __  __                                       _
+             |_ _|_ ___ _____ _ _| |_ ___ _ _ _  _  |  \/  |__ _ _ _  __ _ __ _ ___ _ __  ___ _ _| |_
+              | || ' \ V / -_) ' \  _/ _ \ '_| || | | |\/| / _` | ' \/ _` / _` / -_) '  \/ -_) ' \  _|
+             |___|_||_\_/\___|_||_\__\___/_|  \_, | |_|  |_\__,_|_||_\__,_\__, \___|_|_|_\___|_||_\__|
+                                              |__/                        |___/
+            */
+            // Weapon switching
+            if (controller.buttons.inventory1.current != controller.buttons.inventory1.last)
+                if (controller.buttons.inventory1.current)
+                    if (this.inventory.length > 0)
+                        this.item = 0;
+
+            if (controller.buttons.inventory2.current != controller.buttons.inventory2.last)
+                if (controller.buttons.inventory2.current)
+                    if (this.inventory.length > 1)
+                        this.item = 1;
+
+            if (controller.buttons.throw.current != controller.buttons.throw.last) {
+                if (controller.buttons.throw.current) {
+                    if (this.inventory.length > 0) {
+                        // make a pickup
+                        game.match.map.blocks.push(new WeaponPickup(
+                            allID++,
+                            this.HB.pos.x,
+                            this.HB.pos.y,
+                            30, 0, 0, 0,
+                            { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true, speed: new Vect3(this.speed.x, this.speed.y, 20) }))
+                        // remove the item from the inventory
+                        this.inventory.splice(this.item, 1)[0];
+                        // while the length of the inventory is less than  the item slot plus one, reduce the item slot by one
+                        while (this.inventory.length <= this.item && this.item > 0) {
+                            this.item--;
+                        }
+                    }
+                }
+            }
             /*
               __  __            ___                  _
              |  \/  |__ ___ __ / __|_ __  ___ ___ __| |
@@ -440,6 +479,13 @@ class Character {
             if (this.hp <= 0) {
                 this.active = false;
                 this.deathSFX.play();
+                if (this.inventory[this.item])
+                    game.match.map.blocks.push(new WeaponPickup(
+                        allID++,
+                        this.HB.pos.x,
+                        this.HB.pos.y,
+                        30, 0, 0, 0,
+                        { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true, speed: new Vect3(this.speed.x, this.speed.y, 20) }))
                 if (this === game.player.character) {
                     game.paused = true;
                     // game.player.findTarget();

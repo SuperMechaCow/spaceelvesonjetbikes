@@ -1,6 +1,7 @@
 class Match {
     constructor() {
         this.startTicks = ticks;
+        this.despawnTimer = 3600; // 1 minute
         this.map = new Map();
         this.bots = [];
         this.blocks = []; // Different from map blocks. Think powerups and dropped items
@@ -32,7 +33,9 @@ class Match {
 */
 
 
+class DebugMap extends Match {
 
+}
 
 /*
  #       ####### #     # #######    #     #    #    ######  ######  ### ####### ######
@@ -56,7 +59,6 @@ class Match_LoneWarrior extends Match {
     }
 
     setup() {
-
         /*
            ___                  __  __         _       ___
           / __|__ _ _ __  ___  |  \/  |___  __| |___  | _ ) __ _ _ _  _ _  ___ _ _
@@ -118,18 +120,6 @@ class Match_LoneWarrior extends Match {
         )
 
         /*
-            _      _    _   ___ _         _
-           /_\  __| |__| | | _ ) |___  __| |__ ___
-          / _ \/ _` / _` | | _ \ / _ \/ _| / /(_-<
-         /_/ \_\__,_\__,_| |___/_\___/\__|_\_\/__/
-
-        */
-        for (let i = 0; i < 50; i++) {
-            let ran = function () { return Math.floor(Math.random() * 4) + 1 }
-            this.map.blocks.push(new Block(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, ran() * 32, ran() * 32, ran() * 32, { color: [101, 101, 101], colorSide: [201, 201, 201] }))
-        }
-
-        /*
           ___
          | _ \_____ __ _____ _ _ _  _ _ __ ___
          |  _/ _ \ V  V / -_) '_| || | '_ (_-<
@@ -137,10 +127,11 @@ class Match_LoneWarrior extends Match {
                                      |_|
         */
         for (let i = 0; i < 10; i++) {
-            this.map.blocks.push(new Ammo_Ballistic(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
-            this.map.blocks.push(new Ammo_Plasma(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
-            this.map.blocks.push(new HealthPickup(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
+            this.map.blocks.push(new Ammo_Ballistic(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime, dying: true }))
+            this.map.blocks.push(new Ammo_Plasma(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime, dying: true }))
+            this.map.blocks.push(new HealthPickup(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime, dying: true }))
         }
+
 
         /*
          #     #                    #
@@ -188,20 +179,49 @@ class Match_LoneWarrior extends Match {
                                 Math.round(Math.random() * this.map.h),
                                 0),
                             29, 37);
-
-                        /*
-                          ___
-                         | _ \_____ __ _____ _ _ _  _ _ __ ___
-                         |  _/ _ \ V  V / -_) '_| || | '_ (_-<
-                         |_| \___/\_/\_/\___|_|  \_,_| .__/__/
-                                                     |_|
-                        */
-                        for (let i = 0; i < 5; i++) {
-                            this.map.blocks.push(new Ammo_Ballistic(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
-                            this.map.blocks.push(new Ammo_Plasma(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
-                            this.map.blocks.push(new HealthPickup(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
+                        let rand = Math.floor(Math.random() * 3);
+                        switch (rand) {
+                            case 0:
+                                this.bots[this.bots.length - 1].character.inventory.push(new Pistol())
+                                break;
+                            case 1:
+                                this.bots[this.bots.length - 1].character.inventory.push(new Rifle())
+                                break;
+                            case 2:
+                                this.bots[this.bots.length - 1].character.inventory.push(new Flamer())
+                                break;
                         }
+                        this.bots[this.bots.length - 1].character.item = Math.round(Math.random());
+
                     }
+
+                    /*
+                      ___
+                     | _ \_____ __ _____ _ _ _  _ _ __ ___
+                     |  _/ _ \ V  V / -_) '_| || | '_ (_-<
+                     |_| \___/\_/\_/\___|_|  \_,_| .__/__/
+                                                 |_|
+                    */
+                    for (let i = 0; i < 5; i++) {
+                        this.map.blocks.push(new Ammo_Ballistic(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime * 3, dying: true }))
+                        this.map.blocks.push(new Ammo_Plasma(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime * 3, dying: true }))
+                        this.map.blocks.push(new HealthPickup(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64, { livetime: this.waveTime * 3, dying: true }))
+                    }
+
+                    // Random weapon pickup in the middle of the map
+                    let rand = Math.floor(Math.random() * 3);
+                    switch (rand) {
+                        case 0:
+                            this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2), (this.map.h / 2), 0, 0, 0, 0, { weapon: 'pistol', pickupDelay: 0, livetime: this.waveTime * 3, dying: true }))
+                            break;
+                        case 1:
+                            this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2), (this.map.h / 2), 0, 0, 0, 0, { weapon: 'rifle', pickupDelay: 0, livetime: this.waveTime * 3, dying: true }))
+                            break;
+                        case 2:
+                            this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2), (this.map.h / 2), 0, 0, 0, 0, { weapon: 'flamer', pickupDelay: 0, livetime: this.waveTime * 3, dying: true }))
+                            break;
+                    }
+
                     /*
                       ___    _             _
                      | __| _(_)___ _ _  __| |___
@@ -230,6 +250,19 @@ class Match_LoneWarrior extends Match {
                                 }
                             );
                             this.bots[this.bots.length - 1].character.HB = new Cylinder(new Vect3(Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0), 29, 37);
+                            let rand = Math.floor(Math.random() * 3);
+                            switch (rand) {
+                                case 0:
+                                    this.bots[this.bots.length - 1].character.inventory.push(new Pistol())
+                                    break;
+                                case 1:
+                                    this.bots[this.bots.length - 1].character.inventory.push(new Rifle())
+                                    break;
+                                case 2:
+                                    this.bots[this.bots.length - 1].character.inventory.push(new Flamer())
+                                    break;
+                            }
+                            this.bots[this.bots.length - 1].character.item = Math.round(Math.random());
                         }
                     }
                 }
@@ -237,7 +270,6 @@ class Match_LoneWarrior extends Match {
         )
     }
 }
-
 
 // this.map.blocks.push(new Block(allID++, (this.map.w / 2) - 300, (this.map.h / 2) - 0, 0, 128, 128, 64, { color: [101, 101, 101], colorSide: [201, 201, 201] }))
 // this.map.blocks[this.map.blocks.length - 1].HB.pos.z = 100;
@@ -280,3 +312,22 @@ class Match_LoneWarrior extends Match {
 //         if (actor.HB.pos.z >= this.HB.pos.z)
 //             actor.speed.z += sineAnimate(0.5, 0.05) + 0.5
 //     }.bind(this.map.blocks[this.map.blocks.length - 1]); //end wave
+
+class DebugMatch extends Match {
+    constructor() {
+        super();
+        this.map = new Map();
+        this.name = "Debug Match";
+        this.description = "A match for debugging purposes.";
+        this.setup();
+    }
+    setup = () => {
+        for (let i = 0; i < 5; i++) {
+            this.map.blocks.push(new Ammo_Ballistic(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
+            this.map.blocks.push(new Ammo_Plasma(allID++, Math.round(Math.random() * this.map.w), Math.round(Math.random() * this.map.h), 0, 128, 128, 64))
+        }
+        this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2) - 100, (this.map.h / 2), 0, 0, 0, 0, { weapon: 'pistol', pickupDelay: 0 }))
+        this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2), (this.map.h / 2), 0, 0, 0, 0, { weapon: 'rifle', pickupDelay: 0 }))
+        this.map.blocks.push(new WeaponPickup(allID++, (this.map.w / 2) + 100, (this.map.h / 2), 0, 0, 0, 0, { weapon: 'flamer', pickupDelay: 0 }))
+    }
+}

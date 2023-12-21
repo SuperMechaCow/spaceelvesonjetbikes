@@ -36,6 +36,7 @@ window.onload = function () {
     game.player = new Player();
     
     game.match = new Match_LoneWarrior();
+    // game.match = new DebugMatch();
     
     // Fix in Character classes
     game.player.character = new Character(allID++, 0, 0, game.player, { name: 'Cpt. Fabius', gfx: 'img/sprites/jetbike', hover: 16, airAccel: new Vect3(0.15, 0.15, 1) });
