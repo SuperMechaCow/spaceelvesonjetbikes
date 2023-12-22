@@ -1,9 +1,8 @@
 class Map {
     constructor(options) {
-        this.w = 5096; //7200
-        this.h = 5096; //4800
-        this.tileSize = 48; //32
-        this.tileSet = [[]]
+        this.tileSet = new Tileset({ generate: true });
+        this.w = this.tileSet.tileSize * this.tileSet.grid[0].length; //7200
+        this.h = this.tileSet.tileSize * this.tileSet.grid.length; //4800
         this.nodes = [];
 
         this.friction = {
@@ -22,11 +21,10 @@ class Map {
 
         this.blocks = [];
         this.lastBlock = () => { return this.blocks[this.blocks.length - 1]; }
-        this.missiles = [];
+        this.bullets = [];
         this.debris = [];
 
-        this.lightValue = [0, 0, 0, 0.0];
-        // this.lightValue = [0, 0, 128, 0.25];
+        this.lightValue = [0, 0, 24, 0.15];
 
         this.runFunc = []; // A list of functions to run during the step
 
@@ -90,16 +88,16 @@ class Map {
             }
         }
 
-        for (const e of this.missiles) {
+        for (const e of this.bullets) {
             if (e.cleanup && !e.active) {
-                //Remove missile
-                this.missiles = this.missiles.filter(function (el) { return el != e; });
+                //Remove bullet
+                this.bullets = this.bullets.filter(function (el) { return el != e; });
             }
         }
 
         for (const e of this.debris) {
             if (e.cleanup && !e.active) {
-                //Remove missile
+                //Remove bullet
                 this.debris = this.debris.filter(function (el) { return el != e; });
             }
         }
@@ -153,43 +151,7 @@ class Map {
            |_| |_|_\___/__/
 
         */
-        // For every column that the map can make from the total space
-        let count = 0;
-        for (let x = 0; x < this.w / this.tileSize; x++) {
-            let compareX = game.player.camera.x - (x * this.tileSize);
-            //For every row
-            for (let y = 0; y < this.h / this.tileSize; y++) {
-                let compareY = game.player.camera.y - (y * this.tileSize);
-                //If the tile is within the camera's viewable radius and the horizon
-                // TODO: horizon count doesn't actually line up with the horizon. sky overdraws it
-                let horizonCalc = 0;
-                if (game.player.camera._3D)
-                    horizonCalc = (game.window.h / 2) * (1 - game.player.camera.angle)
-                if (game.player.camera.radius > Math.abs(compareX) && game.player.camera.radius > Math.abs(compareY) - horizonCalc) {
-                    count++;
-                    // Adjust y and h if 3D draw mode
-                    if (game.player.camera._3D)
-                        ctx.drawImage(
-                            this.bgimg,
-                            game.window.w / 2 - compareX,
-                            game.window.h / 2 - (compareY * game.player.camera.angle),
-                            this.tileSize,
-                            this.tileSize * game.player.camera.angle
-                        );
-                    //Otherwise, draw normally
-                    else
-                        ctx.drawImage(
-                            this.bgimg,
-                            game.window.w / 2 - compareX,
-                            game.window.h / 2 - compareY,
-                            this.tileSize,
-                            this.tileSize
-                        );
-                }
-            }
-
-        }
-        // console.log("Drew a total of " + count + " tiles");
+        this.tileSet.draw();
 
         /*
           ___             _            ___  _     _        _
@@ -205,7 +167,7 @@ class Map {
         }
 
         let renderList =
-            [game.player.character, ...npcs, ...game.match.map.blocks, ...game.match.map.missiles, ...game.match.map.debris]
+            [game.player.character, ...npcs, ...game.match.map.blocks, ...game.match.map.bullets, ...game.match.map.debris]
                 .sort((a, b) => {
                     if (a.HB.pos.y < b.HB.pos.y + b.HB.pos.z) return -1;
                     if (a.HB.pos.y > b.HB.pos.y + b.HB.pos.z) return 1;
@@ -290,7 +252,6 @@ class Map {
 
 }
 
-
 /*
       ::::    :::  ::::::::  :::::::::  ::::::::::
      :+:+:   :+: :+:    :+: :+:    :+: :+:
@@ -336,8 +297,6 @@ class Map_FieldCity extends Map {
     }
 
     setup = () => {
-
-
         /*
             _      _    _   ___ _         _
            /_\  __| |__| | | _ ) |___  __| |__ ___
@@ -351,3 +310,145 @@ class Map_FieldCity extends Map {
         }
     }
 }
+
+class Map_Deathbox extends Map {
+    constructor() {
+        super();
+        this.w = 48 * 40;
+        this.h = 48 * 20;
+        this.setup();
+    }
+
+    setup = () => {
+        /*
+            _      _    _   ___ _         _
+           /_\  __| |__| | | _ ) |___  __| |__ ___
+          / _ \/ _` / _` | | _ \ / _ \/ _| / /(_-<
+         /_/ \_\__,_\__,_| |___/_\___/\__|_\_\/__/
+        
+        */
+        for (let i = 0; i < 10; i++) {
+            let ran = function () { return Math.floor(Math.random() * 4) + 1 }
+            this.blocks.push(new Block(allID++, Math.round(Math.random() * this.w), Math.round(Math.random() * this.h), 0, ran() * 32, ran() * 32, ran() * 32, { color: [101, 101, 101], colorSide: [201, 201, 201] }))
+        }
+    }
+}
+
+class Tileset {
+    constructor(options) {
+        this.tileSize = 48;
+        this.grid = [[]];
+        this.generate = false;
+        if (typeof options == 'object')
+            for (const setting of Object.keys(options)) {
+                if (this[setting] !== undefined)
+                    this[setting] = options[setting];
+            }
+
+        if (this.generate) {
+            this.randomGrid();
+        }
+    }
+
+    randomGrid = () => {
+        for (let x = 0; x < 100; x++) {
+            this.grid.push([]);
+            for (let y = 0; y < 100; y++) {
+                // 1 in 20 chance of not getting grass
+                let ran = Math.floor(Math.random() * 20);
+                if (ran == 0) ran = Math.floor(Math.random() * 6)
+                else ran = 0;
+                this.grid[x].push(
+                    ['G', 'B', 'D', 'T', 'E']
+                    [ran]
+                );
+            }
+        }
+    }
+
+    draw = () => {
+        // For every column that the map can make from the total space
+        let count = 0;
+        const rows = this.grid.length
+        for (let y = 0; y < rows; y++) {
+            let compareY = game.player.camera.y - (y * this.tileSize);
+            //For every row
+            const cols = this.grid[y].length
+            for (let x = 0; x < cols; x++) {
+                let compareX = game.player.camera.x - (x * this.tileSize);
+                // console.log(compareX, compareY);
+                //If the tile is within the camera's viewable radius and the horizon
+                // TODO: horizon count doesn't actually line up with the horizon. sky overdraws it
+                let horizonCalc = 0;
+                if (game.player.camera._3D)
+                    horizonCalc = (game.window.h / 2) * (1 - game.player.camera.angle)
+                if (game.player.camera.radius > Math.abs(compareX) && game.player.camera.radius > Math.abs(compareY) - horizonCalc) {
+                    count++;
+                    let tileIMG = this.decodeTile(this.grid[y][x]);
+                    // Adjust y and h if 3D draw mode
+                    if (game.player.camera._3D)
+                        ctx.drawImage(
+                            tileIMG,
+                            game.window.w / 2 - compareX,
+                            game.window.h / 2 - (compareY * game.player.camera.angle),
+                            this.tileSize,
+                            this.tileSize * game.player.camera.angle
+                        );
+                    //Otherwise, draw normally
+                    else
+                        ctx.drawImage(
+                            tileIMG,
+                            game.window.w / 2 - compareX,
+                            game.window.h / 2 - compareY,
+                            this.tileSize,
+                            this.tileSize
+                        );
+                }
+            }
+
+        }
+        // console.log("Drew a total of " + count + " tiles");
+    }
+
+    decodeTile = (tile) => {
+        switch (tile) {
+            case 'G':
+                return tiles.G;
+                break;
+            case 'B':
+                return tiles.B;
+                break;
+            case 'D':
+                return tiles.D;
+                break;
+            case 'T':
+                return tiles.T;
+                break;
+            case 'E':
+                return tiles.E;
+                break;
+            default:
+                return tiles.G;
+                break;
+        }
+    }
+}
+
+const tiles = (() => {
+    list = {
+        'G': 'img/tiles/tile001.png',
+        'B': 'img/tiles/tile002.png',
+        'D': 'img/tiles/tile003.png',
+        'T': 'img/tiles/tile004.png',
+        'E': 'img/tiles/tile005.png'
+    }
+
+    //for every tile in the list, replace the value with a new image object whose source is the value
+    for (const tile in list) {
+        let path = list[tile];
+        list[tile] = new Image();
+        list[tile].src = path;
+    }
+
+    return list;
+})();

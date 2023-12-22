@@ -10,7 +10,6 @@ let ticks = 0;
 let lastTimestamp = 0;
 let fps = 0;
 
-
 /*
       ::::::::  :::::::::: ::::::::::: :::    ::: :::::::::
     :+:    :+: :+:            :+:     :+:    :+: :+:    :+:
@@ -35,14 +34,10 @@ window.onload = function () {
     //Player
     game.player = new Player();
     
-    game.match = new Match_LoneWarrior();
     // game.match = new DebugMatch();
+    game.match = new Match_ForEver();
+    // game.match = new Match_ForHonor();
     
-    // Fix in Character classes
-    game.player.character = new Character(allID++, 0, 0, game.player, { name: 'Cpt. Fabius', gfx: 'img/sprites/jetbike', hover: 16, airAccel: new Vect3(0.15, 0.15, 1) });
-    game.player.character.HB = new Cylinder(new Vect3((game.match.map.w / 2), (game.match.map.h / 2) + 200, 0), 29, 37);
-    game.player.camera = new Camera({ target: game.player.character });
-
     game.match.map.buildNavMesh();
 
     //start game loop
@@ -97,8 +92,8 @@ function step() {
         for (const block of game.match.map.blocks) {
             block.step();
         }
-        for (const missile of game.match.map.missiles) {
-            missile.step();
+        for (const bullet of game.match.map.bullets) {
+            bullet.step();
         }
         for (const debris of game.match.map.debris) {
             debris.step();

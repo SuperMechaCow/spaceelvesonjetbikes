@@ -434,28 +434,53 @@ class PolyBlock {
 
 
 /*
-        :::   :::   ::::::::::: ::::::::   :::::::: ::::::::::: :::        ::::::::::
-      :+:+: :+:+:      :+:    :+:    :+: :+:    :+:    :+:     :+:        :+:
-    +:+ +:+:+ +:+     +:+    +:+        +:+           +:+     +:+        +:+
-   +#+  +:+  +#+     +#+    +#++:++#++ +#++:++#++    +#+     +#+        +#++:++#
-  +#+       +#+     +#+           +#+        +#+    +#+     +#+        +#+
- #+#       #+#     #+#    #+#    #+# #+#    #+#    #+#     #+#        #+#
-###       ### ########### ########   ######## ########### ########## ##########
+      :::::::::  :::::::::   ::::::::  ::::::::::: :::::::::: :::::::: ::::::::::: ::::::::::: :::        :::::::::: ::::::::
+     :+:    :+: :+:    :+: :+:    :+:     :+:     :+:       :+:    :+:    :+:         :+:     :+:        :+:       :+:    :+:
+    +:+    +:+ +:+    +:+ +:+    +:+     +:+     +:+       +:+           +:+         +:+     +:+        +:+       +:+
+   +#++:++#+  +#++:++#:  +#+    +:+     +#+     +#++:++#  +#+           +#+         +#+     +#+        +#++:++#  +#++:++#++
+  +#+        +#+    +#+ +#+    +#+     +#+     +#+       +#+           +#+         +#+     +#+        +#+              +#+
+ #+#        #+#    #+# #+#    #+# #+# #+#     #+#       #+#    #+#    #+#         #+#     #+#        #+#       #+#    #+#
+###        ###    ###  ########   #####      ########## ########     ###     ########### ########## ########## ########
 */
-class Missile extends Block {
+class Bullet extends Block {
     constructor(id, x, y, z, vx, vy, vz, user, options) {
         super(id, x, y, z, vx, vy, vz, options);
         this.user = user;
         this.HB = new Cylinder(new Vect3(x, y, z), vx, vy);
         this.dying = true;
         this.livetime = 100;
-        this.type = 'missile';
+        this.type = 'bullet';
         this.color = [255, 0, 0];
         this.colorSide = [255, 128, 0];
         this.touchSFX = new Audio('sfx/hit_01.wav');
         this.damage = 10;
         this.force = 0.15; // How much of this projectile's speed is applied to the target
         this.shadowDraw = true;
+        this.hitSplash = () => {
+            for (let parts = 0; parts < 10; parts++) {
+                let tempx = (Math.random() * 4) - 2;
+                let tempy = (Math.random() * 4) - 2;
+                let tempz = (Math.random() * 4) - 2;
+                let tempC = Math.ceil(Math.random() * 255);
+                game.match.map.debris.push(
+                    new Block(
+                        allID++,
+                        this.HB.pos.x,
+                        this.HB.pos.y,
+                        this.HB.pos.z,
+                        1, 1, 1,
+                        {
+                            speed: new Vect3(tempx, tempy, tempz),
+                            HB: new Cube(new Vect3(this.HB.pos.x, this.HB.pos.y, this.HB.pos.z), new Vect3(2, 1, 1)),
+                            z: this.HB.pos.z,
+                            color: [255, tempC, 0],
+                            livetime: 20,
+                            dying: true,
+                            shadowDraw: false,
+                            solid: false
+                        }));
+            }
+        }
         this.runFunc = [
             // Create Debris
             () => {
@@ -495,31 +520,6 @@ class Missile extends Block {
                 this.HB.pos.y += this.speed.y;
                 this.HB.pos.z += this.speed.z;
 
-                this.hitSplash = () => {
-                    for (let parts = 0; parts < 10; parts++) {
-                        let tempx = (Math.random() * 4) - 2;
-                        let tempy = (Math.random() * 4) - 2;
-                        let tempz = (Math.random() * 4) - 2;
-                        let tempC = Math.ceil(Math.random() * 255);
-                        game.match.map.debris.push(
-                            new Block(
-                                allID++,
-                                this.HB.pos.x,
-                                this.HB.pos.y,
-                                this.HB.pos.z,
-                                1, 1, 1,
-                                {
-                                    speed: new Vect3(tempx, tempy, tempz),
-                                    HB: new Cube(new Vect3(this.HB.pos.x, this.HB.pos.y, this.HB.pos.z), new Vect3(2, 1, 1)),
-                                    z: this.HB.pos.z,
-                                    color: [255, tempC, 0],
-                                    livetime: 20,
-                                    dying: true,
-                                    shadowDraw: false,
-                                    solid: false
-                                }));
-                    }
-                }
                 /*
                    ___     _ _         _
                   / __|  _| (_)_ _  __| |___ _ _
@@ -600,6 +600,7 @@ class Missile extends Block {
 
 }
 
+
 /*
       :::::::::   ::::::::  :::       ::: :::::::::: :::::::::         :::    ::: :::::::::
      :+:    :+: :+:    :+: :+:       :+: :+:        :+:    :+:        :+:    :+: :+:    :+:
@@ -610,12 +611,12 @@ class Missile extends Block {
 ###         ########    ###   ###   ########## ###    ###         ########  ###
 */
 
-class PowerUp extends Block {
+class PickUp extends Block {
     constructor(id, x, y, z, vx, vy, vz, options) {
         super(id, x, y, z, vx, vy, vz, options);
         this.HB = new Cube(new Vect3(x, y, z + 16), new Vect3(32, 32, 16));
-        this.type = 'powerup';
-        this.touchSFX = new Audio('sfx/coin_01.wav');
+        this.type = 'pickup';
+        this.touchSFX = sounds.pickup_ammo;
         this.solid = false;
         this.shadowDraw = true;
         this.runFunc = [
@@ -634,7 +635,7 @@ class PowerUp extends Block {
     trigger(actor, side) {
         if (actor instanceof Character) {
             this.active = false;
-            // if this actor's target was this powerup, set it to null
+            // if this actor's target was this pickup, set it to null
             if (actor.target == this) actor.target = null;
             //run every runFunc
             for (const func of this.runFunc) {
@@ -645,13 +646,13 @@ class PowerUp extends Block {
     }
 }
 
-class Ammo_Ballistic extends PowerUp {
+class Ammo_Ballistic extends PickUp {
     constructor(id, x, y, z, vx, vy, vz, options) {
         super(id, x, y, z, vx, vy, vz, options);
-        this.type = 'powerup';
+        this.type = 'pickup';
         this.subtype = 'ammo_ballistic';
-        this.imgFile = 'img/sprites/powerups/ammo_ballistic_top.png';
-        this.imgFileSide = 'img/sprites/powerups/ammo_ballistic_side.png';
+        this.imgFile = 'img/sprites/pickups/ammo_ballistic_top.png';
+        this.imgFileSide = 'img/sprites/pickups/ammo_ballistic_side.png';
         this.color = [255, 0, 0];
         this.colorSide = [255, 128, 128];
         this.shadowDraw = true;
@@ -674,13 +675,13 @@ class Ammo_Ballistic extends PowerUp {
     }
 }
 
-class Ammo_Plasma extends PowerUp {
+class Ammo_Plasma extends PickUp {
     constructor(id, x, y, z, vx, vy, vz, options) {
         super(id, x, y, z, vx, vy, vz, options);
-        this.type = 'powerup';
+        this.type = 'pickup';
         this.subtype = 'ammo_plasma';
-        this.imgFile = 'img/sprites/powerups/ammo_plasma_top.png';
-        this.imgFileSide = 'img/sprites/powerups/ammo_plasma_side.png';
+        this.imgFile = 'img/sprites/pickups/ammo_plasma_top.png';
+        this.imgFileSide = 'img/sprites/pickups/ammo_plasma_side.png';
         this.img.src = this.imgFile;
         this.color = [255, 0, 255];
         this.colorSide = [255, 128, 255];
@@ -704,13 +705,14 @@ class Ammo_Plasma extends PowerUp {
     }
 }
 
-class HealthPickup extends PowerUp {
+class HealthPickup extends PickUp {
     constructor(id, x, y, z, vx, vy, vz, options) {
         super(id, x, y, z, vx, vy, vz, options);
-        this.type = 'powerup';
+        this.type = 'pickup';
         this.subtype = 'health';
-        this.imgFile = 'img/sprites/powerups/health_top.png';
-        this.imgFileSide = 'img/sprites/powerups/health_side.png';
+        this.imgFile = 'img/sprites/pickups/health_top.png';
+        this.imgFileSide = 'img/sprites/pickups/health_side.png';
+        this.touchSFX = sounds.pickup_health;
         this.color = [0, 255, 0];
         this.colorSide = [128, 255, 128];
         //if health is not full
@@ -735,7 +737,7 @@ class HealthPickup extends PowerUp {
 }
 
 
-class WeaponPickup extends PowerUp {
+class WeaponPickup extends PickUp {
     constructor(id, x, y, z, vx, vy, vz, options = {}) {
         super(id, x, y, z, vx, vy, vz, options);
         this.type = 'weapon';
@@ -744,11 +746,14 @@ class WeaponPickup extends PowerUp {
         this.ammoMax = 10;
         this.shadowDraw = true;
         this.pickupDelay = ticks + 180;
+        this.touchSFX = sounds.pickup_weapon;
         this.runFunc = [(actor, side) => {
             if (this.pickupDelay < ticks) {
                 if (actor instanceof Character) {
                     if (actor.inventory.length < 2) {
                         this.touchSFX.play();
+                        if (actor.parent instanceof Player)
+                            this.item.owner = actor.parent;
                         actor.inventory.push(this.item); // Add to inventory
                     }
                     else {
@@ -778,27 +783,36 @@ class WeaponPickup extends PowerUp {
             if (this.ammo == undefined) this.ammo = 10;
             this.ammoMax = 10;
             this.item.ammo = this.ammo;
-            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/pistol_inactive.png';
-            else this.imgFile = 'img/icons/inventory/pistol_active.png';
-            this.imgFileSide = 'img/sprites/powerups/ammo_ballistic_side.png';
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/sprites/inventory/pistol_inactive.png';
+            else this.imgFile = 'img/sprites/inventory/pistol_active.png';
+            this.imgFileSide = 'img/sprites/pickups/ammo_ballistic_side.png';
         }
         if (this.weapon == 'rifle') {
             this.item = new Rifle();
             if (this.ammo == undefined) this.ammo = 3;
             this.ammoMax = 3;
             this.item.ammo = this.ammo;
-            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/rifle_inactive.png';
-            else this.imgFile = 'img/icons/inventory/rifle_active.png';
-            this.imgFileSide = 'img/sprites/powerups/ammo_ballistic_side.png';
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/sprites/inventory/rifle_inactive.png';
+            else this.imgFile = 'img/sprites/inventory/rifle_active.png';
+            this.imgFileSide = 'img/sprites/pickups/ammo_ballistic_side.png';
         }
         if (this.weapon == 'flamer') {
             this.item = new Flamer();
-            if (this.ammo == undefined) this.ammo = 5;
-            this.ammoMax = 5;
+            if (this.ammo == undefined) this.ammo = 6;
+            this.ammoMax = 6;
             this.item.ammo = this.ammo;
-            if (this.ammo < this.ammoMax) this.imgFile = 'img/icons/inventory/flamer_inactive.png';
-            else this.imgFile = 'img/icons/inventory/flamer_active.png';
-            this.imgFileSide = 'img/sprites/powerups/ammo_plasma_side.png';
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/sprites/inventory/flamer_inactive.png';
+            else this.imgFile = 'img/sprites/inventory/flamer_active.png';
+            this.imgFileSide = 'img/sprites/pickups/ammo_plasma_side.png';
+        }
+        if (this.weapon == 'lance') {
+            this.item = new Lance();
+            if (this.ammo == undefined) this.ammo = 4;
+            this.ammoMax = 4;
+            this.item.ammo = this.ammo;
+            if (this.ammo < this.ammoMax) this.imgFile = 'img/sprites/inventory/lance_inactive.png';
+            else this.imgFile = 'img/sprites/inventory/lance_active.png';
+            this.imgFileSide = 'img/sprites/pickups/ammo_plasma_side.png';
         }
         this.img.src = this.imgFile;
         this.imgSide.src = this.imgFileSide;

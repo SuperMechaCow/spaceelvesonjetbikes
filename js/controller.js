@@ -7,8 +7,25 @@
      #+#     #+#   #+#+# #+#        #+#    #+#     #+#    #+#    #+#
 ########### ###    #### ###         ########      ###     ########
 */
+
 // Collect all input data and send it to the controller for better handling
 function setupInputs() {
+    
+    /*
+      _    _    _          __                                     _
+     | |  (_)__| |_   ___ / _|  __ _ __ _ _ __  ___ _ __  __ _ __| |___
+     | |__| (_-<  _| / _ \  _| / _` / _` | '  \/ -_) '_ \/ _` / _` (_-<
+     |____|_/__/\__| \___/_|   \__, \__,_|_|_|_\___| .__/\__,_\__,_/__/
+                               |___/               |_|
+    */
+
+    /*
+      _  __         ___
+     | |/ /___ _  _|   \ _____ __ ___ _  ___
+     | ' </ -_) || | |) / _ \ V  V / ' \(_-<
+     |_|\_\___|\_, |___/\___/\_/\_/|_||_/__/
+               |__/
+    */
     document.addEventListener("keydown", function (event) {
         game.player.controller.touch.enabled = false;
         if (event.shiftKey) {
@@ -30,6 +47,13 @@ function setupInputs() {
         if (event.key.toLocaleLowerCase() === " ") game.player.controller.spaceKey = 1;
         if (event.key === "Escape" || event.key === "Escape") game.paused = !game.paused;
     });
+    /*
+      _  __         _   _
+     | |/ /___ _  _| | | |_ __ ___
+     | ' </ -_) || | |_| | '_ (_-<
+     |_|\_\___|\_, |\___/| .__/__/
+               |__/      |_|
+    */
     document.addEventListener("keyup", function (event) {
         game.player.controller.shiftKey = Number(event.shiftKey)
         game.player.controller.altKey = Number(event.altKey)
@@ -42,8 +66,10 @@ function setupInputs() {
         if (event.key.toLocaleLowerCase() === "d" || event.key === "ArrowRight") game.player.controller.rightKey = 0;
         if (event.key.toLocaleLowerCase() === " ") game.player.controller.spaceKey = 0;
     });
+
     window.addEventListener('gamepadconnected', (event) => {
         game.player.controller.gamePad = event.gamepad.index;
+        // game.gamepads.push(gp);
     });
     window.addEventListener('gamepaddisconnected', (event) => {
         game.player.controller.gamePad = null;
@@ -107,11 +133,9 @@ function setupInputs() {
     window.addEventListener("contextmenu", e => e.preventDefault());
 }
 
-function getCanvasRelative(e, center) {
+function getCanvasRelative(e, center = true) {
     bx = canvas.getBoundingClientRect();
-    if (center) {
-        let compareX = e.clientX - this.x;
-        let compareY = e.clientY - this.y;
+    if (center === true) {
         return {
             x: e.clientX - (bx.width / 2),
             y: e.clientY - (bx.height / 2),
@@ -182,13 +206,13 @@ class Controller {
      #    # ###### #    # #####
 
     */
-   /**========================================================================
-    **                           read
-    *?  Reads the controller input and stores it in the controller object
-    *@param event JavaScript event object  
-    *@param type String of the type of event
-    *@return void
-    *========================================================================**/
+    /**========================================================================
+     **                           read
+     *?  Reads the controller input and stores it in the controller object
+     *@param event JavaScript event object  
+     *@param type String of the type of event
+     *@return void
+     *========================================================================**/
     read(event, type) {
 
         // Remember the last state of every command
@@ -225,11 +249,11 @@ class Controller {
             else this.buttons.boost.current = 0;
 
             // A button to switch to weapon 0
-            if (gp.buttons[0].pressed) this.buttons.inventory1.current = 1;
-            else this.buttons.inventory1.current = 0;
-            // X button to switch to weapon 1
-            if (gp.buttons[2].pressed) this.buttons.inventory2.current = 1;
+            if (gp.buttons[0].pressed) this.buttons.inventory2.current = 1;
             else this.buttons.inventory2.current = 0;
+            // X button to switch to weapon 1
+            if (gp.buttons[2].pressed) this.buttons.inventory1.current = 1;
+            else this.buttons.inventory1.current = 0;
             // B button to throw
             if (gp.buttons[1].pressed) this.buttons.throw.current = 1;
             else this.buttons.throw.current = 0;
@@ -453,7 +477,6 @@ class Controller {
         }
     }
 }
-
 
 /*
       :::::::::  :::    :::   :::   :::     :::   :::  :::   :::

@@ -27,11 +27,15 @@ Dark elves believe everything is random:
 #########   ########          ###        ########### ###    ###  ########     ###
 -->
 
+- Sword
+- Inventory Management
+-- X is pickup, A is always Sword, never drop A
 - Randomly generate tilemap
 - Draw Tilemaps
 - target on minimap
 - Collision rays (fast objects go through colliders)
 - Sound distances
+-- Web Audio API
 - Waves and Wind
 - A* pathing
 - Gamepad and touch screen buttons
@@ -55,6 +59,22 @@ Dark elves believe everything is random:
 - Arc Aiming Cone
 
 <!--
+    #                                        #
+   # #   ###### ##### ###### #####           # ###### ##### #####  # #    # ######  ####
+  #   #  #        #   #      #    #          # #        #   #    # # #   #  #      #
+ #     # #####    #   #####  #    #          # #####    #   #####  # ####   #####   ####
+ ####### #        #   #      #####     #     # #        #   #    # # #  #   #           #
+ #     # #        #   #      #   #     #     # #        #   #    # # #   #  #      #    #
+ #     # #        #   ###### #    #     #####  ######   #   #####  # #    # ######  ####
+
+-->
+- Advanced Inventory
+-- Backpack bags/slots
+-- Ordered / Sorted vs Slots
+-- Hotkey bar with adjustable max slots
+
+
+<!--
       :::::::::  :::    :::  ::::::::   ::::::::
      :+:    :+: :+:    :+: :+:    :+: :+:    :+:
     +:+    +:+ +:+    +:+ +:+        +:+
@@ -69,11 +89,19 @@ Dark elves believe everything is random:
 - z height too high on ortho view when over tall block
 - z block top vs player bottom bad when block z is raised
 - ring height too low in iso view when on block
-- missile cylinder shadow not aligning in iso view
+- bullet cylinder shadow not aligning in iso view
 - choppy gamepad aim
 
 
-// weapons
+<!--
+    :::       ::: ::::::::::     :::     :::::::::   ::::::::  ::::    :::          ::::::::::: :::::::::  ::::::::::     :::      ::::::::
+   :+:       :+: :+:          :+: :+:   :+:    :+: :+:    :+: :+:+:   :+:              :+:     :+:    :+: :+:          :+: :+:   :+:    :+:
+  +:+       +:+ +:+         +:+   +:+  +:+    +:+ +:+    +:+ :+:+:+  +:+              +:+     +:+    +:+ +:+         +:+   +:+  +:+
+ +#+  +:+  +#+ +#++:++#   +#++:++#++: +#++:++#+  +#+    +:+ +#+ +:+ +#+              +#+     +#+    +:+ +#++:++#   +#++:++#++: +#++:++#++
++#+ +#+#+ +#+ +#+        +#+     +#+ +#+        +#+    +#+ +#+  +#+#+#              +#+     +#+    +#+ +#+        +#+     +#+        +#+
+#+#+# #+#+#  #+#        #+#     #+# #+#        #+#    #+# #+#   #+#+#              #+#     #+#    #+# #+#        #+#     #+# #+#    #+#
+###   ###   ########## ###     ### ###         ########  ###    ####          ########### #########  ########## ###     ###  ########
+-->
 - ballistic beats crystal beats plasma beats ballistic
 - pistol and sniper beat sheild and grapple by outranging
 - flamer and lance beat pistol and sniper by closing distance and burst damage

@@ -72,10 +72,11 @@ class Character {
         */
         this.item = 0;
         this.inventory = [new Pistol()];
+        this.inventory[0].owner = this.parent;
         this.ammo = {
             plasma: 1,
             plasmaMax: 5,
-            ballistic: 3,
+            ballistic: 1,
             ballisticMax: 5
         }
 
@@ -93,7 +94,7 @@ class Character {
         this.shadow = new Image();
         this.shadow.src = 'img/sprites/shadow.png';
         this.shadowDraw = true;
-        this.deathSFX = new Audio('sfx/hit05.wav');
+        this.deathSFX = sounds.death;
 
         /*
             ___       _   _
@@ -157,6 +158,18 @@ class Character {
                 if (controller.buttons.brake.current) this.mom.z = -1;
 
             }
+            // if the boost button current is not equal to the boost button last
+            // and the boost current is 1
+            if (controller.buttons.boost.current != controller.buttons.boost.last && controller.buttons.boost.current) {
+                // if the player has positive power points (pp)
+                if (this.pp > 60) {
+                    this.pp -= 60;
+                    sounds.boost.play();
+                    this.speed.x += this.mom.x * 8;
+                    this.speed.y += this.mom.y * 8;
+                    this.speed.z += this.mom.z * 8;
+                }
+            }
 
             /*
                  _             _   _
@@ -218,6 +231,12 @@ class Character {
                     }
                 }
             }
+
+            // for every item in the inventory, run its step method
+            for (let i = 0; i < this.inventory.length; i++) {
+                this.inventory[i].step('player');
+            }
+
             /*
               __  __            ___                  _
              |  \/  |__ ___ __ / __|_ __  ___ ___ __| |
@@ -367,36 +386,44 @@ class Character {
                     this.floor = c.HB.pos.z + c.HB.volume.z; //Set the floor to the block's height
                 let side = this.HB.collide(c.HB); //Check for collision
                 if (side) c.trigger(this, side); //Trigger the block's trigger function
-                if (c.solid) //If the block is solid
+                if (c.solid && side) { //If the block is solid
+                    if (this == game.player.character) // Only play for the player until sound ranges are implemented
+                        sounds.wallhit.play();
                     switch (side) { //see which side you collided on
                         case 'front':
                             //Reflect the speed and mom by the map's reflect value
+                            this.hp -= Math.abs(this.speed.y) / 2;
                             this.speed.y *= -c.reflection;
                             this.mom.y *= -c.reflection;
                             //Move the character to the edge of the block
                             this.HB.pos.y = c.HB.pos.y + c.HB.volume.y + this.HB.radius;
                             break;
                         case 'rear':
+                            this.hp -= Math.abs(this.speed.y) / 2;
                             this.speed.y *= -c.reflection;
                             this.mom.y *= -c.reflection;
                             this.HB.pos.y = c.HB.pos.y - this.HB.radius;
                             break;
                         case 'right':
+                            this.hp -= Math.abs(this.speed.x) / 2;
                             this.speed.x *= -c.reflection;
                             this.mom.x *= -c.reflection;
                             this.HB.pos.x = c.HB.pos.x + c.HB.volume.x + this.HB.radius;
                             break;
                         case 'left':
+                            this.hp -= Math.abs(this.speed.x) / 2;
                             this.speed.x *= -c.reflection;
                             this.mom.x *= -c.reflection;
                             this.HB.pos.x = c.HB.pos.x - this.HB.radius;
                             break;
                         case 'top':
+                            this.hp -= Math.abs(this.speed.z) / 2;
                             this.speed.z *= -c.reflection;
                             this.mom.z *= -c.reflection;
                             this.HB.pos.z = c.HB.pos.z + c.HB.volume.z;
                             break;
                         case 'bottom':
+                            this.hp -= Math.abs(this.speed.z) / 2;
                             this.speed.z *= -c.reflection;
                             this.mom.z *= -c.reflection;
                             this.HB.pos.z = c.HB.pos.z - this.HB.height;
@@ -405,6 +432,7 @@ class Character {
                             //break if you didn't collide
                             break;
                     }
+                }
             }
 
             /*
@@ -515,7 +543,10 @@ class Character {
     #########  ###    ### ###     ###   ###   ###
     */
     draw() {
-        if (this.active) {
+
+        if (!this.active && this.cleanup) {
+            return;
+        } else {
             /*
                    _    _                        _    _
               _ __(_)__| |__  __ _ _ _ __ _ _ __| |_ (_)__
@@ -540,7 +571,7 @@ class Character {
                   __| |_  __ _ __| |_____ __ __
                  (_-< ' \/ _` / _` / _ \ V  V /
                  /__/_||_\__,_\__,_\___/\_/\_/
-    
+     
                 */
                 ctx.globalAlpha = 0.4;
                 let shadowShrink = this.HB.radius * Math.min(((this.HB.pos.z - this.floor) / 128), 1)
@@ -647,7 +678,7 @@ class Character {
                   __| |_  __ _ _ _ __ _ __| |_ ___ _ _
                  / _| ' \/ _` | '_/ _` / _|  _/ -_) '_|
                  \__|_||_\__,_|_| \__,_\__|\__\___|_|
-    
+     
                 */
                 ctx.drawImage(
                     this.img,
@@ -719,14 +750,6 @@ class Character {
                 ctx.moveTo(game.window.w / 2 - targetX, game.window.h / 2 - targetY);
                 ctx.lineTo(game.window.w / 2 - compareX, game.window.h / 2 - compareY);
                 ctx.stroke();
-            }
-        } else {
-            if (this === game.player.character) {
-                // draw number of waves to center of screen
-                ctx.fillStyle = "#FFFFFF";
-                ctx.font = "36px Jura";
-                ctx.textAlign = "center";
-                ctx.fillText(`Waves: ${game.match.waves}`, game.window.w / 2, game.window.h / 2);
             }
         }
     }

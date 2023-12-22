@@ -88,7 +88,7 @@ class Bot {
                 this.character.item++; // Switch to the next gun
                 if (this.character.item >= this.character.inventory.length) this.character.item = 0; // If the next gun is out of range, switch to the first gun
                 if (switchCount >= this.character.inventory.length) {
-                    // If we are out of ammo for every gun, set this character's target to the closest Ammo_ powerup on the map
+                    // If we are out of ammo for every gun, set this character's target to the closest Ammo_ pickup on the map
                     let closestAmmo = null;
                     closestAmmo = this.findClosestBlockByType(['ammo_ballistic', 'ammo_plasma']);
                     if (closestAmmo) this.character.target = closestAmmo;
@@ -97,7 +97,7 @@ class Bot {
                 }
             }
 
-            // If this character's hp is below 25, set this character's target to the closest health powerup on the map
+            // If this character's hp is below 25, set this character's target to the closest health pickup on the map
             if (this.character.hp < 25) {
                 let closestHealth = null;
                 closestHealth = this.findClosestBlockByType(['health']);

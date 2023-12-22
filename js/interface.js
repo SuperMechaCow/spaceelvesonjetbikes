@@ -38,8 +38,13 @@ class Interface {
 
     */
     drawHUD() {
-        if (this.player.character.active) {
+        // Run all drawFunc
+        for (const func of this.drawFunc) {
+            func();
+        }
 
+        // The normal HUD in every game mode
+        if (this.player.character.active) {
             // Map locators
             ctx.fillStyle = "#FF0000";
             ctx.fillRect((this.player.camera.x / game.match.map.w) * game.window.w - 3, 0, 6, 6);
@@ -56,11 +61,6 @@ class Interface {
 
             //Ammo
             this.drawAmmo();
-
-            // Run all drawFunc
-            for (const func of this.drawFunc) {
-                func();
-            }
 
             if (game.debug) {
                 ctx.fillStyle = "#000000";
@@ -98,17 +98,18 @@ class Interface {
                 ctx.fillStyle = "#000000";
                 ctx.fillRect(ammoBox.x, ammoBox.y, 10, 100);
                 // draw filled portion of bar
+                let maxTime = (item.reloading) ? item.reloadTime : item.coolDown;
                 ctx.fillStyle = "#0000FF";
                 ctx.fillRect(
                     ammoBox.x, // left of bar
                     ammoBox.y + 100 // bottom of bar
                     - (Math.min( // the smaller value of
-                        Math.max(item.nextCool - ticks, 0) / item.coolDown, // 0 to 1 of cooldown
+                        Math.max(item.nextCool - ticks, 0) / maxTime, // 0 to 1 of cooldown
                         1) // or 1 (if cooldown is greater than 1)
                         * 100), // times the size of the full bar
                     10, // width of bar
                     (Math.min(  // bar is the same height as the distance from top, conviently
-                        Math.max(item.nextCool - ticks, 0) / item.coolDown,
+                        Math.max(item.nextCool - ticks, 0) / maxTime,
                         1)
                         * 100) // times the size of the full bar
                 );
@@ -188,10 +189,12 @@ class Interface {
     drawXhair() {
         // origin, angle, distance, size, spread, color, arc, laser, numXhairs
         if (!game.paused) {
+            let compareX = game.player.camera.x - this.player.character.HB.pos.x;
+            let compareY = game.player.camera.y - this.player.character.HB.pos.y;
             //aimX is the mouse coordinates minus the this.player coordinates
             //likewise with aimY (I calculated this elsewhere)
-            let aimX = this.player.controller.aimX;
-            let aimY = this.player.controller.aimY;
+            let aimX = compareX + this.player.controller.aimX;
+            let aimY = compareY + this.player.controller.aimY;
             //find the distance from this.player to mouse with pythagorean theorem
             let distance = ((aimX ** 2) + (aimY ** 2)) ** 0.5;
             //Normalize the dimension distance by the real distance (ratio)
@@ -199,30 +202,11 @@ class Interface {
             aimX = (aimX / distance);
             aimY = (aimY / distance);
 
-            // Set the distance for the other images
-            const aimRad = 150;
-
-            // Calculate the angles for the additional images (+10% and -10%)
-            const angle = Math.atan2(aimY, aimX);
-            const anglePlus10Percent = angle + game.player.character.accuracy;
-            const angleMinus10Percent = angle - game.player.character.accuracy;
-
-            // Calculate positions for the additional images
-            const aimXPlus10Percent = Math.cos(anglePlus10Percent) * aimRad;
-            const aimYPlus10Percent = Math.sin(anglePlus10Percent) * aimRad;
-
-            const aimXMinus10Percent = Math.cos(angleMinus10Percent) * aimRad;
-            const aimYMinus10Percent = Math.sin(angleMinus10Percent) * aimRad;
+            let aimRad = 150;
 
             // Draw the original image
-            ctx.drawImage(this.xhair, (game.window.w / 2) + aimX * aimRad - 8, (game.window.h / 2) + aimY * aimRad - 8 - (this.player.character.HB.height / 2), 16, 16);
-            // Sniper Xhair
-            // ctx.drawImage(this.xhair, (game.window.w / 2) + (aimX * 2) - 16, (game.window.h / 2) + (aimY * 2) - 16, 32, 32);
-            // Draw the image at +10%
-            // ctx.drawImage(this.xhair, (game.window.w / 2) + aimXPlus10Percent - 8, (game.window.h / 2) + aimYPlus10Percent - 8 - (this.player.character.HB.height / 2), 16, 16);
+            ctx.drawImage(this.xhair, (game.window.w / 2) - compareX + aimX * aimRad - 8, (game.window.h / 2) - compareY + aimY * aimRad - 8 - (this.player.character.HB.height / 2), 16, 16);
 
-            // Draw the image at -10%
-            // ctx.drawImage(this.xhair, (game.window.w / 2) + aimXMinus10Percent - 8, (game.window.h / 2) + aimYMinus10Percent - 8 - (this.player.character.HB.height / 2), 16, 16);
         }
     }
 
@@ -323,7 +307,7 @@ class Interface {
         ctx.globalAlpha = 0.5;
         for (let i = 0; i < game.match.map.blocks.length; i++) {
             let item = game.match.map.blocks[i];
-            if (item.type == "powerup") {
+            if (item.type == "pickup") {
                 //calculate the distance from the player to the bot
                 let distance = Math.sqrt((item.HB.pos.x - game.player.character.HB.pos.x) ** 2 + (item.HB.pos.y - game.player.character.HB.pos.y) ** 2);
                 if (distance > 2000) continue;
