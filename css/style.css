@@ -12,6 +12,12 @@
     padding: 0px;
     margin: 0px;
     overflow: hidden;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
 }
 
 canvas {
@@ -28,7 +34,7 @@ body {
     display: none;
     z-index: 1;
     position: fixed;
-    bottom: 0px;
+    top: 0px;
     left: 0px;
     width: 400px;
     /* height: 300px; */

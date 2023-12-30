@@ -8,7 +8,7 @@
 ########  ###    ### ###     ### ###    ### ###     ###  ########     ###     ########## ###    ###
 */
 class Character {
-    constructor(id, spawnx, spawny, parent, options) {
+    constructor(id, spawnVect, parent, options) {
         this.id = id;
         this.name = '';
         this.parent = parent;
@@ -25,7 +25,7 @@ class Character {
          |_| \___/__/_|\__|_\___/_||_| |___/\__,_|\__\__,_|
 
         */
-        this.HB = new Cylinder(new Vect3(spawnx, spawny, 0), 8, 32);
+        this.HB = new Cylinder(new Vect3(spawnVect.x, spawnVect.y, spawnVect.z), 8, 32);
         this.aim = new Vect3(0, 0, 0);
         this.angle = new Vect3(0, 0, 0);
         this.floor = 0;
@@ -71,7 +71,7 @@ class Character {
 
         */
         this.item = 0;
-        this.inventory = [new Pistol()];
+        this.inventory = [new Sword()];
         this.inventory[0].owner = this.parent;
         this.ammo = {
             plasma: 1,
@@ -95,6 +95,7 @@ class Character {
         this.shadow.src = 'img/sprites/shadow.png';
         this.shadowDraw = true;
         this.deathSFX = sounds.death;
+        this.muted = false;
 
         /*
             ___       _   _
@@ -122,7 +123,7 @@ class Character {
     ########     ###     ########## ###
     */
 
-    step(controller) {
+    step() {
         if (this.active) {
             if (this.pp < this.pp_max)
                 this.pp += 1;
@@ -138,33 +139,41 @@ class Character {
              \__\___/_|_\___\__|\__| |_|_||_| .__/\_,_|\__|
                                             |_|
             */
-            if (controller.buttons.moveLeft.current) this.mom.x = -1;
-            if (controller.buttons.moveRight.current) this.mom.x = 1;
-            if (controller.buttons.moveUp.current) this.mom.y = -1;
-            if (controller.buttons.moveDown.current) this.mom.y = 1;
-            if (controller.buttons.jump.current && controller.buttons.brake.current) {
+
+            // If the player is pressing the start button
+            if (this.parent.controller.buttons.start.current != this.parent.controller.buttons.start.last && this.parent.controller.buttons.start.current)
+                game.paused = !game.paused;
+
+            if (this.parent.controller.buttons.moveLeft.current) this.mom.x = -1;
+            if (this.parent.controller.buttons.moveRight.current) this.mom.x = 1;
+            if (this.parent.controller.buttons.moveUp.current) this.mom.y = -1;
+            if (this.parent.controller.buttons.moveDown.current) this.mom.y = 1;
+            if (this.parent.controller.buttons.jump.current && this.parent.controller.buttons.brake.current) {
                 this.brace = 1;
             }
             else {
-                if (controller.buttons.jump.current) {
+                if (this.parent.controller.buttons.jump.current) {
                     // If the player has positive power points (pp)
                     if (this.pp > 2) {
+                        // sounds.upBoost.currentTime = 0;
+                        // if (!this.muted) sounds.upBoost.play();
                         // Set the z momentum to 1 (move upwards)
                         this.mom.z = 1;
                         // Decrease the power points by 1
                         this.pp -= 2;
                     }
                 }
-                if (controller.buttons.brake.current) this.mom.z = -1;
+                if (this.parent.controller.buttons.brake.current) this.mom.z = -1;
 
             }
             // if the boost button current is not equal to the boost button last
             // and the boost current is 1
-            if (controller.buttons.boost.current != controller.buttons.boost.last && controller.buttons.boost.current) {
+            if (this.parent.controller.buttons.boost.current != this.parent.controller.buttons.boost.last && this.parent.controller.buttons.boost.current) {
                 // if the player has positive power points (pp)
                 if (this.pp > 60) {
                     this.pp -= 60;
-                    sounds.boost.play();
+                    sounds.boost.currentTime = 0;
+                    if (!this.muted) sounds.boost.play();
                     this.speed.x += this.mom.x * 8;
                     this.speed.y += this.mom.y * 8;
                     this.speed.z += this.mom.z * 8;
@@ -178,9 +187,9 @@ class Character {
              /__/_||_\___/\___/\__|_|_||_\__, |
                                          |___/
             */
-            if (controller.buttons.fire.current != controller.buttons.fire.last) {
+            if (this.parent.controller.buttons.fire.current != this.parent.controller.buttons.fire.last) {
                 if (this.inventory.length) {
-                    if (controller.buttons.fire.current) {
+                    if (this.parent.controller.buttons.fire.current) {
                         const xMulti = (game.player.camera._3D) ? game.player.camera.angle : 1;
                         let aimX = this.parent.controller.aimX * xMulti;
                         let aimY = this.parent.controller.aimY;
@@ -202,32 +211,39 @@ class Character {
                                               |__/                        |___/
             */
             // Weapon switching
-            if (controller.buttons.inventory1.current != controller.buttons.inventory1.last)
-                if (controller.buttons.inventory1.current)
-                    if (this.inventory.length > 0)
+            if (this.parent.controller.buttons.inventory1.current != this.parent.controller.buttons.inventory1.last)
+                if (this.parent.controller.buttons.inventory1.current)
+                    if (this.inventory.length > 0) {
                         this.item = 0;
+                        if (this.parent.interface)
+                            this.parent.interface.itemChangeTicks = game.match.ticks + 180;
+                    }
 
-            if (controller.buttons.inventory2.current != controller.buttons.inventory2.last)
-                if (controller.buttons.inventory2.current)
-                    if (this.inventory.length > 1)
+            if (this.parent.controller.buttons.inventory2.current != this.parent.controller.buttons.inventory2.last)
+                if (this.parent.controller.buttons.inventory2.current)
+                    if (this.inventory.length > 1) {
                         this.item = 1;
+                        if (this.parent.interface)
+                            this.parent.interface.itemChangeTicks = game.match.ticks + 180;
+                    }
 
-            if (controller.buttons.throw.current != controller.buttons.throw.last) {
-                if (controller.buttons.throw.current) {
+            if (this.parent.controller.buttons.throw.current != this.parent.controller.buttons.throw.last) {
+                if (this.parent.controller.buttons.throw.current) {
                     if (this.inventory.length > 0) {
                         // make a pickup
                         game.match.map.blocks.push(new WeaponPickup(
                             allID++,
-                            this.HB.pos.x,
-                            this.HB.pos.y,
-                            30, 0, 0, 0,
-                            { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true, speed: new Vect3(this.speed.x, this.speed.y, 20) }))
+                            new Vect3(this.HB.pos.x, this.HB.pos.y, this.HB.pos.z + this.HB.height / 2),
+                            new Vect3(this.speed.x, this.speed.y, this.speed.z + 20),
+                            { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true } ));
                         // remove the item from the inventory
                         this.inventory.splice(this.item, 1)[0];
                         // while the length of the inventory is less than  the item slot plus one, reduce the item slot by one
                         while (this.inventory.length <= this.item && this.item > 0) {
                             this.item--;
                         }
+                        if (this.parent.interface)
+                            this.parent.interface.itemChangeTicks = game.match.ticks + 180;
                     }
                 }
             }
@@ -285,22 +301,6 @@ class Character {
             // if (Math.abs(this.speed.z) < game.match.map.stopZone) this.speed.z = 0; //I don't know if this one makes a difference
 
             /*
-              _
-             | |_  _____ _____ _ _
-             | ' \/ _ \ V / -_) '_|
-             |_||_\___/\_/\___|_|
-
-            */
-            if (this.HB.pos.z < this.hover) { //If you are lower than the hover threshold
-                this.speed.z += Math.max((1 - (this.HB.pos.z / this.hover)) * this.bouyancy, 0) + game.match.map.gravity;
-                //Move up by your bouyancy times the percent between your z and you hover, not negative
-                //Also cancel out gravity
-            }
-            else if (this.HB.pos.z > this.hover) { //If you are higher than the hover threshold
-                this.speed.z += Math.max((1 - ((this.HB.pos.z - this.hover) / this.hover)) * this.bouyancy, 0); //Move up by your bouyancy times the percent over the hover, not negative
-            }
-
-            /*
                                 _ _
               __ _ _ _ __ ___ _(_) |_ _  _
              / _` | '_/ _` \ V / |  _| || |
@@ -331,7 +331,7 @@ class Character {
                 if (c.character === this) //Don't collide with yourself
                     continue;
                 c = c.character; //Get the character from the bot
-                if (this.HB.above(c.HB)) //If you are above the block and the block is not solid
+                if (this.HB.above(c.HB) && c.solid) //If you are above the block and the block is not solid
                     this.floor = c.HB.pos.z + c.HB.height; //Set the floor to the block's height
                 let side = this.HB.collide(c.HB); //Check for collision
                 if (side) c.trigger(this, side);
@@ -382,13 +382,16 @@ class Character {
 
             */
             for (const c of game.match.map.blocks) { //For each block
-                if (this.HB.above(c.HB) && !c.solid) //If you are above the block and the block is not solid
+                if (this.HB.above(c.HB) && c.solid) { //If you are above the block and the block is not solid
                     this.floor = c.HB.pos.z + c.HB.volume.z; //Set the floor to the block's height
+                }
                 let side = this.HB.collide(c.HB); //Check for collision
                 if (side) c.trigger(this, side); //Trigger the block's trigger function
                 if (c.solid && side) { //If the block is solid
-                    if (this == game.player.character) // Only play for the player until sound ranges are implemented
-                        sounds.wallhit.play();
+                    if (this == game.player.character) { // Only play for the player until sound ranges are implemented
+                        // sounds.wallhit.currentTime = 0;
+                        if (!this.muted) sounds.wallhit.play();
+                    }
                     switch (side) { //see which side you collided on
                         case 'front':
                             //Reflect the speed and mom by the map's reflect value
@@ -436,6 +439,22 @@ class Character {
             }
 
             /*
+              _
+             | |_  _____ _____ _ _
+             | ' \/ _ \ V / -_) '_|
+             |_||_\___/\_/\___|_|
+
+            */
+            if (this.HB.pos.z < this.hover + this.floor) { //If you are lower than the hover threshold
+                this.speed.z += Math.max((1 - (this.HB.pos.z / this.hover)) * this.bouyancy, 0) + game.match.map.gravity;
+                //Move up by your bouyancy times the percent between your z and you hover, not negative
+                //Also cancel out gravity
+            }
+            else if (this.HB.pos.z > this.hover + this.floor) { //If you are higher than the hover threshold
+                this.speed.z += Math.max((1 - ((this.HB.pos.z - this.hover) / this.hover)) * this.bouyancy, 0); //Move up by your bouyancy times the percent over the hover, not negative
+            }
+
+            /*
               __  __      _         _   _          __  __
              |  \/  |__ _| |_____  | |_| |_  ___  |  \/  |_____ _____
              | |\/| / _` | / / -_) |  _| ' \/ -_) | |\/| / _ \ V / -_)
@@ -459,25 +478,29 @@ class Character {
                 // refelct the speed and mom by the map's reflect value
                 this.speed.x *= -game.match.map.collideReflect;
                 this.mom.x *= -game.match.map.collideReflect;
-                // sounds.dam1.play();
+                // sounds.wallhit.currentTime = 0;
+                if (!this.muted) sounds.wallhit.play();
             }
             if (this.HB.pos.x > game.match.map.w) {
                 this.HB.pos.x = game.match.map.w;
                 this.speed.x *= -game.match.map.collideReflect;
                 this.mom.x *= -game.match.map.collideReflect;
-                // sounds.dam1.play();
+                // sounds.wallhit.currentTime = 0;
+                if (!this.muted) sounds.wallhit.play();
             }
             if (this.HB.pos.y < 0) {
                 this.HB.pos.y = 0;
                 this.speed.y *= -game.match.map.collideReflect;
                 this.mom.y *= -game.match.map.collideReflect;
-                // sounds.dam1.play();
+                // sounds.wallhit.currentTime = 0;
+                if (!this.muted) sounds.wallhit.play();
             }
             if (this.HB.pos.y > game.match.map.h) {
                 this.HB.pos.y = game.match.map.h;
                 this.speed.y *= -game.match.map.collideReflect;
                 this.mom.y *= -game.match.map.collideReflect;
-                // sounds.dam1.play();
+                // sounds.wallhit.currentTime = 0;
+                if (!this.muted) sounds.wallhit.play();
             }
 
             /*
@@ -490,7 +513,10 @@ class Character {
             if (-this.speed.z > this.HB.pos.z + game.match.map.floor) {
                 this.HB.pos.z = 0;
                 // this.speed.z *= -0.5
-                // sounds.dam1.play();
+                if (this.hover > 0) {
+                    // sounds.groundhit.currentTime = 0;
+                    if (!this.muted) sounds.groundhit.play();
+                }
             }
 
             /*
@@ -506,19 +532,14 @@ class Character {
 
             if (this.hp <= 0) {
                 this.active = false;
+                if (!this.muted)
                 this.deathSFX.play();
                 if (this.inventory[this.item])
                     game.match.map.blocks.push(new WeaponPickup(
                         allID++,
-                        this.HB.pos.x,
-                        this.HB.pos.y,
-                        30, 0, 0, 0,
-                        { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true, speed: new Vect3(this.speed.x, this.speed.y, 20) }))
-                if (this === game.player.character) {
-                    game.paused = true;
-                    // game.player.findTarget();
-                    // game.player.camera.target = game.player.target;
-                }
+                        new Vect3(this.HB.pos.x, this.HB.pos.y, this.HB.pos.z + this.HB.height / 2),
+                        new Vect3(this.speed.x, this.speed.y, this.speed.z + 20),
+                        { weapon: this.inventory[this.item].weapon, ammo: this.inventory[this.item].ammo, livetime: game.match.despawnTimer, dying: true }))
             }
         }
     }
@@ -836,7 +857,7 @@ class Character {
             ctx.drawImage(
                 this.img,
                 game.window.w / 2 - compareX - this.HB.radius,
-                game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.height - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle)) * (1 - game.paused)),
+                game.window.h / 2 - (compareY * game.player.camera.angle) - this.HB.height - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle))),
                 this.HB.radius * 2,
                 this.HB.height
             );
@@ -844,7 +865,7 @@ class Character {
             ctx.drawImage(
                 this.img,
                 game.window.w / 2 - compareX - this.HB.radius,
-                game.window.h / 2 - (compareY * game.player.camera.angle) - (this.HB.height * (1 - game.player.camera.angle)) - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle)) * (1 - game.paused)),
+                game.window.h / 2 - (compareY * game.player.camera.angle) - (this.HB.height * (1 - game.player.camera.angle)) - (this.HB.pos.z * (1 - game.player.camera.angle)) - ((sineAnimate(1, 0.1) * (1 - game.player.camera.angle))),
                 this.HB.radius * 2,
                 this.HB.height * (1 - game.player.camera.angle)
             );
@@ -915,6 +936,34 @@ class Character {
 
 }
 
+
+/*
+     ::::::::::: :::::::::: ::::::::::: ::::::::: ::::::::::: :::    ::: ::::::::::
+        :+:     :+:            :+:     :+:    :+:    :+:     :+:   :+:  :+:
+       +:+     +:+            +:+     +:+    +:+    +:+     +:+  +:+   +:+
+      +#+     +#++:++#       +#+     +#++:++#+     +#+     +#++:++    +#++:++#
+     +#+     +#+            +#+     +#+    +#+    +#+     +#+  +#+   +#+
+#+# #+#     #+#            #+#     #+#    #+#    #+#     #+#   #+#  #+#
+#####      ##########     ###     ######### ########### ###    ### ##########
+*/
+class Jetbike extends Character {
+    constructor(id, spawnVect, parent, options) {
+        super(id, spawnVect, parent, options);
+        this.HB = new Cylinder(new Vect3(spawnVect.x, spawnVect.y, spawnVect.z), 29, 37);
+        this.airAccel = new Vect3(0.15, 0.15, 1);
+        this.hover = 16;
+    }
+}
+
+/*
+      ::::    :::     :::       :::   :::   :::::::::: ::::::::
+     :+:+:   :+:   :+: :+:    :+:+: :+:+:  :+:       :+:    :+:
+    :+:+:+  +:+  +:+   +:+  +:+ +:+:+ +:+ +:+       +:+
+   +#+ +:+ +#+ +#++:++#++: +#+  +:+  +#+ +#++:++#  +#++:++#++
+  +#+  +#+#+# +#+     +#+ +#+       +#+ +#+              +#+
+ #+#   #+#+# #+#     #+# #+#       #+# #+#       #+#    #+#
+###    #### ###     ### ###       ### ########## ########
+*/
 function getName() {
     let names = [
         "Hae'din",

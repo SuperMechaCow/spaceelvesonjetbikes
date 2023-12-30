@@ -27,34 +27,40 @@ Dark elves believe everything is random:
 #########   ########          ###        ########### ###    ###  ########     ###
 -->
 
-- Sword
+- For Speed
+- high scores
+- music
+- graphics
+- ship
+
+- all players in one list
+- janky menus (better menu handling)
+- for honor countdown and best of 5
+- ISO draw
+- A* pathing
+- Gamepad and touch screen buttons
+- Create more bullet types
 - Inventory Management
 -- X is pickup, A is always Sword, never drop A
-- Randomly generate tilemap
-- Draw Tilemaps
 - target on minimap
 - Collision rays (fast objects go through colliders)
 - Sound distances
 -- Web Audio API
 - Waves and Wind
-- A* pathing
-- Gamepad and touch screen buttons
-- Keyboard, Mouse, Touch, Gamepad classes
-- ?? Only draw in camera
 - Shoot along z rotation in iso view
 - Bots always shoot at z axis in every view (no hiding on top of blocks)
-- Bot chasing / targets / paths
 - Racing
 - Complete speed physics (top speed, actual speed, weight)
 - Graphics are block attached to character
-- Give blocks friction for wall jumping rooftop drag
 -- Are shadows blocks, too?
+- Give blocks friction for wall jumping rooftop drag
+-- Fix floor slam on top of block bug
 - Animators
 - Emitters
 - Melee Weapons
 - Polyblock regions
 - 3D Polyblocks
-- Camera Zoom/Pan/Shake
+- Camera Zoom/Pan
 - Draw xhair from anywhere
 - Arc Aiming Cone
 

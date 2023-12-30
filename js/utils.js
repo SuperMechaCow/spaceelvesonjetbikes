@@ -189,6 +189,10 @@ class Cylinder {
         this.height = height;
     }
 
+    center() {
+        return new Vect3(this.pos.x, this.pos.y, this.pos.z + this.height / 2);
+    }
+
     /**
      * Checks if the cylinder collides with another shape.
      * @param {Rect|Cube} c - The shape to check collision with.
@@ -314,7 +318,7 @@ class Cylinder {
  */
 function sineAnimate(amp, freq, offset) {
     if (!offset) offset = 0
-    return amp * Math.sin(freq * (ticks + offset));
+    return amp * Math.sin(freq * (game.match.ticks + offset));
 }
 
 /**
@@ -342,4 +346,14 @@ function easeinout(userValue, maxValue) {
     const easeOutValue = normalizedValue * (2 - normalizedValue);
     const modifiedValue = (easeInValue + easeOutValue) / 2 * maxValue;
     return modifiedValue
+}
+
+function formatTicks(ticks) {
+    let milliseconds = Math.floor(ticks % 60);
+    let seconds = Math.floor(ticks / 60);
+    let minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+    if (seconds < 10) seconds = '0' + seconds;
+    if (minutes < 10) minutes = '0' + minutes;
+    return minutes + ':' + seconds + '.' + milliseconds;
 }
